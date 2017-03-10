@@ -1,0 +1,20 @@
+{
+  "name": "ecs-service-deployment-monitor",
+  "version": "0.1.0",
+  "description": "Monitor an ECS Deployment",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "aws-mock": "^1.1.1",
+    "expect.js": "^0.3.1",
+    "mocha": "^3.2.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.25.0",
+    "lodash": "^4.17.4"
+  }
+}
