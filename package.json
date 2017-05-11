@@ -9,6 +9,14 @@
   "author": "Coen Hyde",
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk-mock": "^1.6.1"
+    "aws-sdk-mock": "^1.6.1",
+    "requirize": "^0.1.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.49.0",
+    "colors": "^1.1.2",
+    "lodash": "^4.17.4",
+    "stream-combiner": "^0.2.2",
+    "yargs": "^7.0.2"
   }
 }
