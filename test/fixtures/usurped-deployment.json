@@ -1,0 +1,26 @@
+{
+  "services": [{
+    "status": "ACTIVE",
+    "deployments": [{
+        "status": "PRIMARY",
+        "pendingCount": 0,
+        "createdAt": 1479783045.97,
+        "desiredCount": 2,
+        "taskDefinition": "arn:aws:ecs:us-east-1:123456789012:task-definition/app:112",
+        "updatedAt": 1479783045.97,
+        "id": "ecs-svc/9223370547071729737",
+        "runningCount": 0
+      },
+      {
+        "status": "ACTIVE",
+        "pendingCount": 0,
+        "createdAt": 1479782499.295,
+        "desiredCount": 2,
+        "taskDefinition": "arn:aws:ecs:us-east-1:123456789012:task-definition/app:111",
+        "updatedAt": 1479782499.295,
+        "id": "ecs-svc/9223370547072276512",
+        "runningCount": 2
+      }
+    ]
+  }]
+}
