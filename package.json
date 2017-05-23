@@ -4,7 +4,7 @@
   "description": "Monitor an ECS Deployment",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/mocha"
+    "test": "node_modules/.bin/mocha --recursive"
   },
   "author": "Coen Hyde",
   "license": "MIT",
