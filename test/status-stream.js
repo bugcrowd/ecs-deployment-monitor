@@ -24,13 +24,25 @@ describe('Status Stream', function() {
     stream._read();
   });
 
+
+  describe('Cluster Events', function() {
+    it('should store new events for each status update', function(done) {
+      var stream = new StatusStream({cluster: 'cluster-yo', service: 'service-yo'});
+      var events = stream.pluckEventsSince(fixtures['newDeployment']['services'][0]['events'], 1494960755);
+      stream.destroy();
+
+      expect(events.length).to.equal(5);
+      done();
+    });
+  });
+
   describe('Status Determination', function() {
     it('should return DEPLOYMENT_NOT_FOUND if no deployment matches taskDefinition provided', function(done) {
       var stream = new StatusStream({cluster: 'cluster-yo', service: 'service-yo', taskDefinition: 'wrong'});
-      var result = stream.determineStatus(fixtures['newDeployment']['services'][0]);
+      var status = stream.determineStatus(fixtures['newDeployment']['services'][0]);
       stream.destroy();
 
-      expect(result.status).to.equal('DEPLOYMENT_NOT_FOUND');
+      expect(status.state).to.equal('DEPLOYMENT_NOT_FOUND');
       done();
     });
 
@@ -40,11 +52,11 @@ describe('Status Stream', function() {
         service: 'service-yo',
         taskDefinition: 'arn:aws:ecs:us-east-1:123456789012:task-definition/app:111'
       });
-      
-      var result = stream.determineStatus(fixtures['usurpedDeployment']['services'][0]);
+
+      var status = stream.determineStatus(fixtures['usurpedDeployment']['services'][0]);
       stream.destroy();
 
-      expect(result.status).to.equal('DEPLOY_USURPED');
+      expect(status.state).to.equal('DEPLOYMENT_USURPED');
       done();
     });
   });
