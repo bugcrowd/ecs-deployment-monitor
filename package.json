@@ -13,9 +13,12 @@
     "requirize": "^0.1.2"
   },
   "dependencies": {
+    "async": "^2.4.1",
     "aws-sdk": "^2.49.0",
     "colors": "^1.1.2",
+    "inflection": "^1.12.0",
     "lodash": "^4.17.4",
+    "requirize": "^0.1.2",
     "stream-combiner": "^0.2.2",
     "yargs": "^7.0.2"
   }

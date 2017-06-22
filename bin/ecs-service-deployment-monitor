@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+var AWS = require('aws-sdk');
+AWS.config.update({region:'us-east-1'});
+
 var ecsServiceDeploymentMonitor = require('../');
 
 var argv = require('yargs')
@@ -12,12 +15,24 @@ var options = {
   taskDefinition: argv.taskDefinition
 };
 
-var stream = ecsServiceDeploymentMonitor(options);
+// var stream = ecsServiceDeploymentMonitor(options);
+//
+// stream.on('error', (err) => {
+//   throw err;
+// });
+//
+// stream.on('data', (data) => {
+//   console.log(data);
+// });
 
-stream.on('error', (err) => {
+var Service = require('../lib/service');
+
+service = new Service(options);
+
+service.on('error', (err) => {
   throw err;
 });
 
-stream.on('data', (data) => {
-  console.log(data);
+service.on('event', (event) => {
+  console.log(event.raw.message);
 });

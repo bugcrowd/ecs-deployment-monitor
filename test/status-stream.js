@@ -16,7 +16,7 @@ describe('Status Stream', function() {
       expect(params.cluster).to.equal('cluster-yo');
       expect(params.services).to.eql(['service-yo']);
       stream.destroy();
-      AWS.restore('ECS', 'describeServices')
+      AWS.restore('ECS', 'describeServices');
       done();
     });
 
