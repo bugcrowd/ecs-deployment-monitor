@@ -1,17 +1,16 @@
 'use strict'
 
-const path = require('path');
 const expect = require('expect.js');
 const _ = require('lodash');
 const AWS = require('aws-sdk-mock');
 
-AWS.setSDK(path.resolve('node_modules/aws-sdk'));
+const helpers = require('./helpers');
 
 var Service = require('../lib/service');
 var fixtures = require('./fixtures');
 
 describe('Service', function() {
-  afterEach(() => AWS.restore());
+  afterEach(helpers.afterEach);
 
   it('should return call describeServices with correct params', function(done) {
     AWS.mock('ECS', 'describeServices', function (params, cb){
