@@ -10,7 +10,8 @@
   "license": "MIT",
   "devDependencies": {
     "aws-sdk-mock": "^1.6.1",
-    "requirize": "^0.1.2"
+    "requirize": "^0.1.2",
+    "sinon": "^2.3.5"
   },
   "dependencies": {
     "async": "^2.4.1",
