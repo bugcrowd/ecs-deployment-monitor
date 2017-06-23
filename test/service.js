@@ -21,7 +21,7 @@ describe('Service', function() {
       done();
     });
 
-    var service = new Service({cluster: 'cluster-yo', serviceName: 'service-yo'});
+    var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
   });
 
   describe('Cluster Events', function() {
@@ -30,7 +30,7 @@ describe('Service', function() {
         cb(null, fixtures['newDeployment']);
       });
 
-      var service = new Service({cluster: 'cluster-yo', service: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo', service: 'service-yo'});
       var events = service._pluckEventsSince(fixtures['newDeployment']['services'][0]['events'], 1494960755);
       service.destroy();
 
@@ -47,7 +47,7 @@ describe('Service', function() {
         cb(null, { tasks: [1,2,3,4] });
       });
 
-      var service = new Service({cluster: 'cluster-yo', service: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo', service: 'service-yo'});
 
       service.on('event', (event) => {
         expect(event.raw.id).to.equal("e1e75594-b9c9-4c32-bb90-89801bd89a62");

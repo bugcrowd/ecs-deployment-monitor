@@ -10,9 +10,9 @@ var argv = require('yargs')
   .argv;
 
 var options = {
-  cluster: argv.cluster,
+  clusterArn: argv.cluster,
   serviceName: argv.service,
-  taskDefinition: argv.taskDefinition
+  taskDefinitionArn: argv.taskDefinition
 };
 
 // var stream = ecsServiceDeploymentMonitor(options);
