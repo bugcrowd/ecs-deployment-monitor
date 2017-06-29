@@ -5,7 +5,7 @@ const AWS = require('aws-sdk-mock');
 
 const helpers = require('../helpers');
 
-const TasksStartedEvent = require('../../lib/events/tasks-started');
+const TasksStartedEvent = require('../../lib/events/tasks-started-event');
 
 describe('Events:TasksStartedEvent', function() {
   afterEach(helpers.afterEach);
