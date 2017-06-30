@@ -9,7 +9,7 @@
   "author": "Coen Hyde",
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk-mock": "^1.6.1",
+    "aws-sdk-mock": "^1.7.0",
     "requirize": "^0.1.2",
     "sinon": "^2.3.5"
   },

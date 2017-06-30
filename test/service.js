@@ -3,6 +3,7 @@
 const expect = require('expect.js');
 const _ = require('lodash');
 const AWS = require('aws-sdk-mock');
+const sinon = require('sinon');
 
 const helpers = require('./helpers');
 
@@ -11,16 +12,23 @@ var fixtures = require('./fixtures');
 
 describe('Service', function() {
   afterEach(helpers.afterEach);
-
-  it('should return call describeServices with correct params', function(done) {
-    AWS.mock('ECS', 'describeServices', function (params, cb){
-      expect(params.cluster).to.equal('cluster-yo');
-      expect(params.services).to.eql(['service-yo']);
-      service.destroy();
-      done();
+  beforeEach(() => {
+    AWS.mock('ELBv2', 'describeTargetGroups', function (params, cb) {
+      cb(null, { TargetGroups: [ 'tg' ] });
     });
+  });
 
-    var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+  describe('Constructor', function() {
+    it('should return call describeServices with correct params', function(done) {
+      AWS.mock('ECS', 'describeServices', function (params, cb){
+        expect(params.cluster).to.equal('cluster-yo');
+        expect(params.services).to.eql(['service-yo']);
+        service.destroy();
+        done();
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+    });
   });
 
   describe('Cluster Events', function() {
@@ -53,6 +61,23 @@ describe('Service', function() {
         service.destroy();
         done();
       });
+    });
+  });
+
+  it('should load target groups from aws', function(done) {
+    AWS.mock('ECS', 'describeServices', function (params, cb){
+      cb(null, fixtures['tasksStartedDeployment']);
+    });
+
+    AWS.mock('ECS', 'describeTasks', function (params, cb){
+      cb(null, { tasks: [1,2,3,4] });
+    });
+
+    var service = new Service({clusterArn: 'cluster-yo', service: 'service-yo'});
+    service.on('updated', () => {
+      expect(service.loadBalancers.length).to.equal(1);
+      service.destroy();
+      done();
     });
   });
 });
