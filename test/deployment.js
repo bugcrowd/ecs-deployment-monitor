@@ -16,6 +16,22 @@ var fixtures = require('./fixtures');
 describe('Deployment', function() {
   afterEach(helpers.afterEach);
 
+  it('should emit state change and set internal state', function(done) {
+    var startTime = Date.now();
+    var service = new EventEmitter();
+    var deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+
+    deployment.on('state', (state) => {
+      expect(state).to.equal('fake');
+      expect(deployment.state).to.equal('fake');
+      expect(deployment.history[0].state).to.equal('fake');
+      expect(deployment.history[0].transitionedAt).to.greaterThan(startTime);
+      done();
+    });
+
+    deployment.setState('fake');
+  });
+
   describe('Constructor', function() {
     var eventListenerStub = sinon.stub(Deployment.prototype, "_serviceEventListener");
     afterEach(() => eventListenerStub.restore());
@@ -28,17 +44,13 @@ describe('Deployment', function() {
 
       async.nextTick(() => {
         expect(eventListenerStub.called).to.equal(true);
+        deployment.destroy();
         done();
       });
     });
   });
 
   describe('Service Event Listener', function() {
-    var evaluateStub;
-
-    beforeEach(() => evaluateStub = sinon.stub(Deployment.prototype, "evaluate"));
-    afterEach(() => evaluateStub.restore());
-
     it('should process a TasksStartedEvent and retain tasks', function(done) {
       var taskArn = 'arn:task';
       var service = new EventEmitter();
@@ -46,14 +58,15 @@ describe('Deployment', function() {
 
       var event = new events.TasksStartedEvent(service, { message: 'msg' });
       event.tasks = [
-        { id: 1, taskDefinitionArn: taskArn },
-        { id: 2, taskDefinitionArn: taskArn }
+        { taskArn: 1, taskDefinitionArn: taskArn },
+        { taskArn: 2, taskDefinitionArn: taskArn }
       ];
 
       deployment._serviceEventListener(event);
 
       expect(deployment.tasks.length).to.equal(2);
       expect(deployment.tasksStarted).to.eql([1,2]);
+      deployment.destroy();
       done();
     });
 
@@ -64,13 +77,32 @@ describe('Deployment', function() {
 
       var event = new events.TasksStartedEvent(service, { message: 'msg' });
       event.tasks = [
-        { id: 1, taskDefinitionArn: 'arn:wrong' },
-        { id: 2, taskDefinitionArn: 'arn:wrong' }
+        { taskArn: 1, taskDefinitionArn: 'arn:wrong' },
+        { taskArn: 2, taskDefinitionArn: 'arn:wrong' }
       ];
 
       deployment._serviceEventListener(event);
 
       expect(deployment.tasks.length).to.equal(0);
+      deployment.destroy();
+      done();
+    });
+
+    it('should process a TasksStoppedEvent and record the tasks failed', function(done) {
+      var taskArn = 'arn:task';
+      var service = new EventEmitter();
+      var deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
+
+      var event = new events.TasksStoppedEvent(service, { message: 'msg' });
+      event.tasks = [
+        { taskArn: 1, taskDefinitionArn: taskArn },
+        { taskArn: 2, taskDefinitionArn: taskArn }
+      ];
+
+      deployment._serviceEventListener(event);
+
+      expect(deployment.tasksFailed).to.eql([1,2]);
+      deployment.destroy();
       done();
     });
   });
