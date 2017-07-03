@@ -32,6 +32,16 @@ describe('Deployment', function() {
     deployment.setState('fake');
   });
 
+  it('should report deployment as failed when history includes failed states', function() {
+    var service = new EventEmitter();
+    var deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment.history.push({state: 'Created'});
+    deployment.history.push({state: 'StartingTasks'});
+    expect(deployment.isFailure()).to.equal(false);
+    deployment.history.push({state: 'Failed'});
+    expect(deployment.isFailure()).to.equal(true);
+  });
+
   describe('Constructor', function() {
     var eventListenerStub = sinon.stub(Deployment.prototype, "_serviceEventListener");
     afterEach(() => eventListenerStub.restore());
