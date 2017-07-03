@@ -59,6 +59,7 @@ describe('Deployment', function() {
 
     it('should call evaluators', function(done) {
       var service = new EventEmitter();
+      service.initiated = true;
       var deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
 
       var evaluatorStubs = {
@@ -83,6 +84,7 @@ describe('Deployment', function() {
       });
 
       var service = new EventEmitter();
+      service.initiated = true;
       var deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
 
       var evaluatorStubs = {
