@@ -42,6 +42,14 @@ describe('Deployment', function() {
     expect(deployment.isFailure()).to.equal(true);
   });
 
+  it('hasState should behave correctly', function() {
+    var service = new EventEmitter();
+    var deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    expect(deployment.hasState('Created')).to.equal(false);
+    deployment.history.push({state: 'Created'});
+    expect(deployment.hasState('Created')).to.equal(true);
+  });
+
   describe('Constructor', function() {
     var eventListenerStub = sinon.stub(Deployment.prototype, "_serviceEventListener");
     afterEach(() => eventListenerStub.restore());
