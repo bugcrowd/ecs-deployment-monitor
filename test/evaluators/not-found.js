@@ -25,7 +25,7 @@ describe('Evaluator:Not Found', function() {
     });
   });
 
-  it('should return TRUE when deployment was found', function(done) {
+  it('should return TRUE when deployment was NOT found', function(done) {
     var service = new EventEmitter();
     service.initiated = true;
     service.raw = fixtures['newDeployment']['services'][0];
