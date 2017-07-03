@@ -50,6 +50,51 @@ describe('Deployment', function() {
     });
   });
 
+  describe('Evaluator', function() {
+    var evaluatorSpyFactory = (name, result) => {
+      return sinon.spy((d, cb) => {
+        cb(null, result);
+      });
+    }
+
+    it('should call evaluators', function(done) {
+      var service = new EventEmitter();
+      var deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+
+      var evaluatorStubs = {
+        'NotFound': evaluatorSpyFactory('NotFound', false),
+        'Usurped': evaluatorSpyFactory('Usurped', false),
+        'StartingTasks': evaluatorSpyFactory('StartingTasks', false)
+      };
+
+      deployment.evaluate(evaluatorStubs, (err) => {
+        expect(evaluatorStubs['NotFound'].called).to.equal(true);
+        expect(evaluatorStubs['Usurped'].called).to.equal(true);
+        expect(evaluatorStubs['StartingTasks'].called).to.equal(true);
+        done();
+      });
+    });
+
+    it('should call setState when evaluator returns true', function(done) {
+      var setStateStub = sinon.stub(Deployment.prototype, "setState").callsFake(function(state) {
+        expect(state).to.equal('Usurped');
+        setStateStub.restore();
+        done();
+      });
+
+      var service = new EventEmitter();
+      var deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+
+      var evaluatorStubs = {
+        'NotFound': evaluatorSpyFactory('NotFound', false),
+        'Usurped': evaluatorSpyFactory('Usurped', true),
+        'StartingTasks': evaluatorSpyFactory('StartingTasks', false)
+      };
+
+      deployment.evaluate(evaluatorStubs, _.noop);
+    });
+  })
+
   describe('Service Event Listener', function() {
     it('should process a TasksStartedEvent and retain tasks', function(done) {
       var taskArn = 'arn:task';
