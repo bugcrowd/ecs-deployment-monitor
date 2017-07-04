@@ -9,7 +9,7 @@ const fixtures = require('../fixtures');
 var Deployment = require('../../lib/deployment');
 var evaluators = require('../../lib/evaluators');
 
-describe('Evaluator:Not Found', function() {
+describe('Evaluator:NotFound', function() {
   var evaluator = evaluators['NotFound'];
 
   it('should return FALSE when deployment was found', function(done) {
