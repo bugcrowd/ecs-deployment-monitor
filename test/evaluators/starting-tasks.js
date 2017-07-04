@@ -19,7 +19,6 @@ describe('Evaluator:StartingTasks', function() {
     service.raw = fixtures['newDeployment']['services'][0];
 
     var deployment = new Deployment({service: service, taskDefinitionArn: service.raw.taskDefinition});
-    deployment.setState('Created');
 
     evaluator(deployment, (err, result) => {
       expect(result).to.equal(false);
@@ -34,7 +33,6 @@ describe('Evaluator:StartingTasks', function() {
     service.raw = fixtures['newDeployment']['services'][0];
 
     var deployment = new Deployment({service: service, taskDefinitionArn: service.raw.taskDefinition});
-    deployment.setState('Created');
     deployment.tasksStarted.push('task');
 
     evaluator(deployment, (err, result) => {
