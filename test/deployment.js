@@ -87,9 +87,9 @@ describe('Deployment', function() {
       };
 
       deployment.evaluate(evaluatorStubs, (err) => {
-        expect(evaluatorStubs['NotFound'].called).to.equal(true);
-        expect(evaluatorStubs['Usurped'].called).to.equal(true);
-        expect(evaluatorStubs['StartingTasks'].called).to.equal(true);
+        expect(evaluatorStubs['NotFound'].calledOnce).to.equal(true);
+        expect(evaluatorStubs['Usurped'].calledOnce).to.equal(true);
+        expect(evaluatorStubs['StartingTasks'].calledOnce).to.equal(true);
         done();
       });
     });
@@ -113,7 +113,24 @@ describe('Deployment', function() {
 
       deployment.evaluate(evaluatorStubs, _.noop);
     });
-  })
+
+    it('should call evaluators only one if evaluator previouly returned true', function(done) {
+      var service = new EventEmitter();
+      service.initiated = true;
+      var deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+
+      var evaluatorStubs = {
+        'StartingTasks': evaluatorSpyFactory('StartingTasks', true)
+      };
+
+      deployment.evaluate(evaluatorStubs, (err) => {
+        deployment.evaluate(evaluatorStubs, (err) => {
+          expect(evaluatorStubs['StartingTasks'].calledOnce).to.equal(true);
+          done();
+        });
+      });
+    });
+  });
 
   describe('Service Event Listener', function() {
     it('should process a TasksStartedEvent and retain tasks', function(done) {
