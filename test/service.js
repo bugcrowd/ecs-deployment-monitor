@@ -11,23 +11,27 @@ var Service = require('../lib/service');
 var fixtures = require('./fixtures');
 
 describe('Service', function() {
-  var instanceStub = null;
-
-  afterEach(helpers.afterEach);
+  var targetHealthStub = null;
+  var containerInstanceStub = null;
 
   beforeEach(() => {
-    AWS.mock('ELBv2', 'describeTargetGroups', function (params, cb) {
-      cb(null, { TargetGroups: [ 'tg' ] });
-    });
+    targetHealthStub = sinon
+      .stub(Service.prototype, "_targets")
+      .callsFake((cb) => {
+        cb(null, ['target']);
+      });
 
-    instanceStub = sinon
+    containerInstanceStub = sinon
       .stub(Service.prototype, "_clusterContainerInstances")
       .callsFake((cb) => cb(null, ['instance']));
   });
 
   afterEach(() => {
-    instanceStub.restore();
-  })
+    targetHealthStub.restore();
+    containerInstanceStub.restore();
+  });
+
+  afterEach(helpers.afterEach);
 
   describe('Constructor', function() {
     it('should return call describeServices with correct params', function(done) {
@@ -60,7 +64,7 @@ describe('Service', function() {
         cb(null, fixtures['newDeployment']);
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', service: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
       var events = service._pluckEventsSince(fixtures['newDeployment']['services'][0]['events'], 1494960755);
       service.destroy();
 
@@ -77,7 +81,7 @@ describe('Service', function() {
         cb(null, { tasks: [1,2,3,4] });
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', service: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
 
       service.on('event', (event) => {
         expect(event.raw.id).to.equal("e1e75594-b9c9-4c32-bb90-89801bd89a62");
@@ -87,9 +91,43 @@ describe('Service', function() {
     });
   });
 
+  describe('Targets', function() {
+    it('should return targets', function(done) {
+      targetHealthStub.restore();
+
+      AWS.mock('ECS', 'describeServices', function (params, cb){
+        cb(null, fixtures['newDeployment']);
+      });
+
+      AWS.mock('ELBv2', 'describeTargetHealth', function (params, cb) {
+        expect(params.TargetGroupArn).to.equal('arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/group/abcdef');
+
+        cb(null, {
+          TargetHealthDescriptions: [
+            {
+              Target: {
+                Id: "i-1",
+                Port: 25001
+              },
+              TargetHealth: {
+                State: "healthy"
+              }
+            }
+          ]
+        });
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      service.on('updated', () => {
+        expect(service.targets.length).to.equal(1);
+        done();
+      });
+    });
+  });
+
   describe('ClusterContainerInstances', function() {
     it('should return container instances', function(done) {
-      instanceStub.restore();
+      containerInstanceStub.restore();
 
       AWS.mock('ECS', 'listContainerInstances', function (params, cb) {
         expect(params.cluster).to.equal('cluster-yo');
@@ -134,7 +172,7 @@ describe('Service', function() {
         });
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', service: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
       service._clusterContainerInstances((err, containerInstances) => {
         expect(containerInstances.length).to.equal(2);
         expect(containerInstances[0].PrivateIpAddress).to.equal('1.1');
