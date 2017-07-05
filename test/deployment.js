@@ -14,12 +14,18 @@ var events = require('../lib/events');
 var fixtures = require('./fixtures');
 
 describe('Deployment', function() {
+  var deployment = null;
+
+  afterEach(() => {
+    if (deployment) deployment.destroy();
+  });
+
   afterEach(helpers.afterEach);
 
   it('should emit state change and set internal state', function(done) {
     var startTime = Date.now();
     var service = new EventEmitter();
-    var deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
 
     deployment.on('state', (state) => {
       expect(state).to.equal('fake');
@@ -34,7 +40,7 @@ describe('Deployment', function() {
 
   it('should report deployment as failed when history includes failed states', function() {
     var service = new EventEmitter();
-    var deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
     deployment.history.push({state: 'Created'});
     deployment.history.push({state: 'StartingTasks'});
     expect(deployment.isFailure()).to.equal(false);
@@ -44,7 +50,7 @@ describe('Deployment', function() {
 
   it('hasState should behave correctly', function() {
     var service = new EventEmitter();
-    var deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
     expect(deployment.hasState('Created')).to.equal(false);
     deployment.history.push({state: 'Created'});
     expect(deployment.hasState('Created')).to.equal(true);
@@ -56,13 +62,12 @@ describe('Deployment', function() {
 
     it('should listen for events on a service object ', function(done) {
       var service = new EventEmitter();
-      var deployment = new Deployment({service: service});
+      deployment = new Deployment({service: service});
 
       service.emit('event', 'test');
 
       async.nextTick(() => {
         expect(eventListenerStub.called).to.equal(true);
-        deployment.destroy();
         done();
       });
     });
@@ -78,7 +83,7 @@ describe('Deployment', function() {
     it('should call evaluators', function(done) {
       var service = new EventEmitter();
       service.initiated = true;
-      var deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+      deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
 
       var evaluatorStubs = {
         'NotFound': evaluatorSpyFactory('NotFound', false),
@@ -103,7 +108,7 @@ describe('Deployment', function() {
 
       var service = new EventEmitter();
       service.initiated = true;
-      var deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+      deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
 
       var evaluatorStubs = {
         'NotFound': evaluatorSpyFactory('NotFound', false),
@@ -117,7 +122,7 @@ describe('Deployment', function() {
     it('should call evaluators only one if evaluator previouly returned true', function(done) {
       var service = new EventEmitter();
       service.initiated = true;
-      var deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+      deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
 
       var evaluatorStubs = {
         'StartingTasks': evaluatorSpyFactory('StartingTasks', true)
@@ -136,7 +141,7 @@ describe('Deployment', function() {
     it('should process a TasksStartedEvent and retain tasks', function(done) {
       var taskArn = 'arn:task';
       var service = new EventEmitter();
-      var deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
+      deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
 
       var event = new events.TasksStartedEvent(service, { message: 'msg' });
       event.tasks = [
@@ -148,14 +153,13 @@ describe('Deployment', function() {
 
       expect(deployment.tasks.length).to.equal(2);
       expect(deployment.tasksStarted).to.eql([1,2]);
-      deployment.destroy();
       done();
     });
 
     it('should process a TasksStartedEvent and not retain tasks for a different deployment', function(done) {
       var taskArn = 'arn:task';
       var service = new EventEmitter();
-      var deployment = new Deployment({service: service, taskDefinitionArn: 'arn:task'});
+      deployment = new Deployment({service: service, taskDefinitionArn: 'arn:task'});
 
       var event = new events.TasksStartedEvent(service, { message: 'msg' });
       event.tasks = [
@@ -166,14 +170,13 @@ describe('Deployment', function() {
       deployment._serviceEventListener(event);
 
       expect(deployment.tasks.length).to.equal(0);
-      deployment.destroy();
       done();
     });
 
     it('should process a TasksStoppedEvent and record the tasks failed', function(done) {
       var taskArn = 'arn:task';
       var service = new EventEmitter();
-      var deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
+      deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
 
       var event = new events.TasksStoppedEvent(service, { message: 'msg' });
       event.tasks = [
@@ -184,9 +187,7 @@ describe('Deployment', function() {
       deployment._serviceEventListener(event);
 
       expect(deployment.tasksFailed).to.eql([1,2]);
-      deployment.destroy();
       done();
     });
   });
-
 });
