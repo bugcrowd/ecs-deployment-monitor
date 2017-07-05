@@ -11,12 +11,23 @@ var Service = require('../lib/service');
 var fixtures = require('./fixtures');
 
 describe('Service', function() {
+  var instanceStub = null;
+
   afterEach(helpers.afterEach);
+
   beforeEach(() => {
     AWS.mock('ELBv2', 'describeTargetGroups', function (params, cb) {
       cb(null, { TargetGroups: [ 'tg' ] });
     });
+
+    instanceStub = sinon
+      .stub(Service.prototype, "_clusterContainerInstances")
+      .callsFake((cb) => cb(null, ['instance']));
   });
+
+  afterEach(() => {
+    instanceStub.restore();
+  })
 
   describe('Constructor', function() {
     it('should return call describeServices with correct params', function(done) {
@@ -28,6 +39,18 @@ describe('Service', function() {
       });
 
       var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+    });
+
+    it('should return call _clusterContainerInstances', function(done) {
+      AWS.mock('ECS', 'describeServices', function (params, cb){
+        cb(null, fixtures['newDeployment']);
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      service.on('updated', () => {
+        expect(service.clusterContainerInstances).to.eql(['instance']);
+        done();
+      });
     });
   });
 
@@ -64,20 +87,59 @@ describe('Service', function() {
     });
   });
 
-  it('should load target groups from aws', function(done) {
-    AWS.mock('ECS', 'describeServices', function (params, cb){
-      cb(null, fixtures['tasksStartedDeployment']);
-    });
+  describe('ClusterContainerInstances', function() {
+    it('should return container instances', function(done) {
+      instanceStub.restore();
 
-    AWS.mock('ECS', 'describeTasks', function (params, cb){
-      cb(null, { tasks: [1,2,3,4] });
-    });
+      AWS.mock('ECS', 'listContainerInstances', function (params, cb) {
+        expect(params.cluster).to.equal('cluster-yo');
 
-    var service = new Service({clusterArn: 'cluster-yo', service: 'service-yo'});
-    service.on('updated', () => {
-      expect(service.loadBalancers.length).to.equal(1);
-      service.destroy();
-      done();
+        cb(null, {
+          containerInstanceArns: [
+            "arn::1",
+            "arn::2"
+          ]
+        });
+      });
+
+      AWS.mock('ECS', 'describeContainerInstances', function (params, cb) {
+        expect(params.cluster).to.equal('cluster-yo');
+
+        cb(null, {
+          containerInstances: [
+            { containerInstanceArn: "arn::1", ec2InstanceId: "i-1" },
+            { containerInstanceArn: "arn::2", ec2InstanceId: "i-2" }
+          ]
+        });
+      });
+
+      AWS.mock('EC2', 'describeInstances', function (params, cb) {
+        expect(params.InstanceIds).to.eql(["i-1","i-2"]);
+
+        cb(null, {
+          Reservations: [
+            {
+              Instances: [
+                {
+                  InstanceId: "i-1",
+                  PrivateIpAddress: '1.1'
+                },
+                {
+                  InstanceId: "i-2",
+                  PrivateIpAddress: '2.2'
+                }
+              ]
+            }
+          ]
+        });
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', service: 'service-yo'});
+      service._clusterContainerInstances((err, containerInstances) => {
+        expect(containerInstances.length).to.equal(2);
+        expect(containerInstances[0].PrivateIpAddress).to.equal('1.1');
+        done();
+      });
     });
   });
 });
