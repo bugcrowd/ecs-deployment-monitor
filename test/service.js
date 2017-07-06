@@ -123,6 +123,43 @@ describe('Service', function() {
         done();
       });
     });
+
+    it('should return a target via getTarget', function(done) {
+      AWS.mock('ECS', 'describeServices', function (params, cb){
+        cb(null, fixtures['newDeployment']);
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      service.on('updated', () => {
+        service.targets = [
+          {
+            HealthCheckPort: "25001",
+            Target: {
+              Id: "i-1",
+              Port: 25001
+            },
+            TargetHealth: {
+              State: "healthy"
+            }
+          },
+          {
+            HealthCheckPort: "25002",
+            Target: {
+              Id: "i-1",
+              Port: 25002
+            },
+            TargetHealth: {
+              State: "healthy"
+            }
+          }
+        ];
+
+        var target = service.getTarget("i-1", 25002);
+        expect(target.Target.Port).to.equal(25002);
+
+        done();
+      });
+    });
   });
 
   describe('ClusterContainerInstances', function() {
