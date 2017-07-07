@@ -10,6 +10,7 @@ const EventEmitter = require('events');
 const helpers = require('./helpers');
 
 var Deployment = require('../lib/deployment');
+var Service = require('../lib/service');
 var events = require('../lib/events');
 var fixtures = require('./fixtures');
 
@@ -188,6 +189,99 @@ describe('Deployment', function() {
 
       expect(deployment.tasksFailed).to.eql([1,2]);
       done();
+    });
+  });
+
+  describe('Target Health', function() {
+    var targetHealthStub = null;
+    var containerInstanceStub = null;
+
+    beforeEach(() => {
+      targetHealthStub = sinon
+        .stub(Service.prototype, "_targets")
+        .callsFake((cb) => {
+          cb(null, [
+            {
+              Target: {
+                Id: "i-1",
+                Port: 25001
+              },
+              TargetHealth: {
+                State: "unhealthy"
+              }
+            },
+            {
+              Target: {
+                Id: "i-1",
+                Port: 25002
+              },
+              TargetHealth: {
+                State: "healthy"
+              }
+            }
+          ]);
+        });
+
+      containerInstanceStub = sinon
+        .stub(Service.prototype, "_clusterContainerInstances")
+        .callsFake((cb) => {
+          cb(null, [
+            {
+              containerInstanceArn: 'arn::ci:1',
+              ec2InstanceId: 'i-1'
+            }
+          ])
+        });
+    });
+
+    afterEach(() => {
+      targetHealthStub.restore();
+      containerInstanceStub.restore();
+    });
+
+    it('should report task health', function(done) {
+      AWS.mock('ECS', 'describeServices', function (params, cb){
+        cb(null, fixtures['newDeployment']);
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+      deployment.tasks = [
+        {
+          taskArn: 'arn::task:1',
+          containerInstanceArn: 'arn::ci:1',
+          containers: [
+            {
+              name: 'app',
+              networkBindings: [
+                {
+                  hostPort: 25001
+                }
+              ]
+            }
+          ]
+        },
+        {
+          taskArn: 'arn::task:2',
+          containerInstanceArn: 'arn::ci:1',
+          containers: [
+            {
+              name: 'app',
+              networkBindings: [
+                {
+                  hostPort: 25002
+                }
+              ]
+            }
+          ]
+        },
+      ];
+
+      service.on('updated', function() {
+        // expect(deployment.isTaskHealthy('arn::task:1')).to.equal(false);
+        expect(deployment.isTaskHealthy('arn::task:2')).to.equal(true);
+        done();
+      });
     });
   });
 });
