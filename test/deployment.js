@@ -190,6 +190,18 @@ describe('Deployment', function() {
       expect(deployment.tasksFailed).to.eql([1,2]);
       done();
     });
+
+    it('should process a SteadyEvent and mark deployment as steady', function(done) {
+      var taskArn = 'arn:task';
+      var service = new EventEmitter();
+      deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
+
+      var event = new events.SteadyEvent(service, { message: 'msg' });
+      deployment._serviceEventListener(event);
+
+      expect(deployment.steady).to.eql(true);
+      done();
+    });
   });
 
   describe('Target Health', function() {
