@@ -88,6 +88,10 @@ describe('Service', function() {
         service.destroy();
         done();
       });
+
+      service.on('error', (error) => {
+        console.log(error);
+      });
     });
   });
 
