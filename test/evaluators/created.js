@@ -37,19 +37,4 @@ describe('Evaluator:Created', function() {
       done();
     });
   });
-
-  it('should return FALSE when deployment has already entered the "Created" state', function(done) {
-    var service = new EventEmitter();
-    service.initiated = true;
-    service.raw = fixtures['newDeployment']['services'][0];
-
-    var deployment = new Deployment({service: service, taskDefinitionArn: service.raw.taskDefinition});
-    deployment.history.push({state: 'Created'});
-
-    evaluator(deployment, (err, result) => {
-      expect(result).to.equal(false);
-      deployment.destroy();
-      done();
-    });
-  });
 });
