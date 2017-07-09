@@ -192,31 +192,10 @@ describe('Service', function() {
         });
       });
 
-      AWS.mock('EC2', 'describeInstances', function (params, cb) {
-        expect(params.InstanceIds).to.eql(["i-1","i-2"]);
-
-        cb(null, {
-          Reservations: [
-            {
-              Instances: [
-                {
-                  InstanceId: "i-1",
-                  PrivateIpAddress: '1.1'
-                },
-                {
-                  InstanceId: "i-2",
-                  PrivateIpAddress: '2.2'
-                }
-              ]
-            }
-          ]
-        });
-      });
-
       var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
       service._clusterContainerInstances((err, containerInstances) => {
         expect(containerInstances.length).to.equal(2);
-        expect(containerInstances[0].PrivateIpAddress).to.equal('1.1');
+        expect(containerInstances[0].ec2InstanceId).to.equal('i-1');
         done();
       });
     });
