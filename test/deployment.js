@@ -57,18 +57,49 @@ describe('Deployment', function() {
     expect(deployment.hasState('Created')).to.equal(true);
   });
 
+  it('should set raw deployment after service update', function(done) {
+    var service = new EventEmitter();
+    service.raw = {
+      deployments: [
+        {
+          taskDefinition: 'bla'
+        }
+      ]
+    };
+
+    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment._serviceUpdated();
+
+    expect(deployment.raw).to.eql({
+      taskDefinition: 'bla'
+    });
+    done();
+  });
+
   describe('Constructor', function() {
-    var eventListenerStub = sinon.stub(Deployment.prototype, "_serviceEventListener");
-    afterEach(() => eventListenerStub.restore());
+    var serviceEventListenerStub = null;
+    var serviceUpdatedStub = null;
+
+    beforeEach(() => {
+      serviceEventListenerStub = sinon.stub(Deployment.prototype, "_serviceEventListener");
+      serviceUpdatedStub = sinon.stub(Deployment.prototype, "_serviceUpdated");
+    });
+
+    afterEach(() => {
+      serviceEventListenerStub.restore()
+      serviceUpdatedStub.restore()
+    });
 
     it('should listen for events on a service object ', function(done) {
       var service = new EventEmitter();
       deployment = new Deployment({service: service});
 
       service.emit('event', 'test');
+      service.emit('updated');
 
       async.nextTick(() => {
-        expect(eventListenerStub.called).to.equal(true);
+        expect(serviceEventListenerStub.called).to.equal(true);
+        expect(serviceUpdatedStub.called).to.equal(true);
         done();
       });
     });
@@ -139,21 +170,35 @@ describe('Deployment', function() {
   });
 
   describe('Service Event Listener', function() {
+    var evaluateStub = null;
+
+    beforeEach(() => {
+      evaluateStub = sinon.stub(Deployment.prototype, "evaluate");
+    });
+
+    afterEach(() => {
+      evaluateStub.restore()
+    });
+
     it('should process a TasksStartedEvent and retain tasks', function(done) {
       var taskArn = 'arn:task';
       var service = new EventEmitter();
       deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
+      deployment.raw = {
+        createdAt: Date.now() - 5
+      }
 
       var event = new events.TasksStartedEvent(service, { message: 'msg' });
       event.tasks = [
-        { taskArn: 1, taskDefinitionArn: taskArn },
-        { taskArn: 2, taskDefinitionArn: taskArn }
+        { taskArn: 1, taskDefinitionArn: taskArn, startedAt: Date.now() },
+        { taskArn: 2, taskDefinitionArn: taskArn, startedAt: Date.now() }
       ];
 
       deployment._serviceEventListener(event);
 
       expect(deployment.tasks.length).to.equal(2);
       expect(deployment.tasksStarted).to.eql([1,2]);
+      expect(evaluateStub.called).to.eql(true);
       done();
     });
 
@@ -178,11 +223,14 @@ describe('Deployment', function() {
       var taskArn = 'arn:task';
       var service = new EventEmitter();
       deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
+      deployment.raw = {
+        createdAt: Date.now() - 5
+      }
 
       var event = new events.TasksStoppedEvent(service, { message: 'msg' });
       event.tasks = [
-        { taskArn: 1, taskDefinitionArn: taskArn },
-        { taskArn: 2, taskDefinitionArn: taskArn }
+        { taskArn: 1, taskDefinitionArn: taskArn, startedAt: Date.now() },
+        { taskArn: 2, taskDefinitionArn: taskArn, startedAt: Date.now() }
       ];
 
       deployment._serviceEventListener(event);
