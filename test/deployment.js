@@ -170,16 +170,6 @@ describe('Deployment', function() {
   });
 
   describe('Service Event Listener', function() {
-    var evaluateStub = null;
-
-    beforeEach(() => {
-      evaluateStub = sinon.stub(Deployment.prototype, "evaluate");
-    });
-
-    afterEach(() => {
-      evaluateStub.restore()
-    });
-
     it('should process a TasksStartedEvent and retain tasks', function(done) {
       var taskArn = 'arn:task';
       var service = new EventEmitter();
@@ -198,7 +188,6 @@ describe('Deployment', function() {
 
       expect(deployment.tasks.length).to.equal(2);
       expect(deployment.tasksStarted).to.eql([1,2]);
-      expect(evaluateStub.called).to.eql(true);
       done();
     });
 
