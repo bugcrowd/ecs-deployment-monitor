@@ -1,18 +1,31 @@
 'use strict'
 
-const combiner = require('stream-combiner');
 const AWS = require('aws-sdk');
-
-const FormatConsoleTransformStream = require('./lib/format-console-transform-stream');
+const Service = require('./lib/service');
+const Deployment = require('./lib/deployment');
 
 module.exports = function(options) {
-  AWS.config.update({
-    region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
+  // Set the default region to 'us-east-1' if not already set
+  if (!aws.config.region) {
+    AWS.config.update({
+      region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
+    });
+  }
+
+  let service = new Service({
+    serviceName: options.serviceName,
+    clusterArn: options.clusterArn
   });
 
-  // var formatter = new FormatConsoleTransformStream();
-  var status = new StatusStream(options);
-  return status;
+  let deployment = new Deployment({
+    taskDefinitionArn: options.taskDefinitionArn,
+    service: service
+  });
 
-  // return combiner(status, formatter);
+  deployment.on('end', (state) => {
+    service.destroy();
+    deployment.destroy();
+  });
+
+  return deployment;
 }
