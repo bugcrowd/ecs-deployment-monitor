@@ -1,38 +1,36 @@
 #!/usr/bin/env node
 
-var AWS = require('aws-sdk');
+const colors = require('colors/safe');
+const AWS = require('aws-sdk');
+
 AWS.config.update({region:'us-east-1'});
 
-var ecsServiceDeploymentMonitor = require('../');
+const Service = require('../lib/service');
+const Deployment = require('../lib/deployment');
 
 var argv = require('yargs')
   .demand([ 'cluster', 'service', 'task-definition' ])
   .argv;
 
-var options = {
-  clusterArn: argv.cluster,
+var service = new Service({
   serviceName: argv.service,
-  taskDefinitionArn: argv.taskDefinition
-};
+  clusterArn: argv.cluster
+});
 
-// var stream = ecsServiceDeploymentMonitor(options);
-//
-// stream.on('error', (err) => {
-//   throw err;
-// });
-//
-// stream.on('data', (data) => {
-//   console.log(data);
-// });
+var deployment = new Deployment({
+  taskDefinitionArn: argv.taskDefinition,
+  service: service
+});
 
-var Service = require('../lib/service');
-
-service = new Service(options);
-
-service.on('error', (err) => {
+deployment.on('error', (err) => {
   throw err;
 });
 
-service.on('event', (event) => {
-  console.log(event.raw.message);
+deployment.on('state', (state) => {
+  console.log(colors.cyan(`-> ${state}`));
+});
+
+deployment.on('end', (state) => {
+  service.destroy();
+  deployment.destroy();
 });
