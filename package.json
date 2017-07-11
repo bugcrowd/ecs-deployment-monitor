@@ -20,7 +20,6 @@
     "inflection": "^1.12.0",
     "lodash": "^4.17.4",
     "requirize": "^0.1.3",
-    "stream-combiner": "^0.2.2",
     "yargs": "^7.0.2"
   }
 }

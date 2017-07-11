@@ -1,9 +1,18 @@
-ECS Service Deployment Monitor
+ECS Deployment Monitor
 ==============================
 
-ECS Service Deployment Monitor will help you monitor the status of a deployment of a new task definition to an ECS Service.
+ECS Deployment Monitor will help you monitor the status of a deployment of a new task definition to an ECS Service.
 
 Its primary use case it to identify when a deploy fails. When containers in a task fail to start, ECS will terminate the task and start a new one. This is a great feature until you have a version of your application that will not start. In this scenario ECS will continue to start and stop tasks indefinitely, while leaving you none the wiser that your deploy has failed and an old version of your application is still running.
+
+Installation
+------------
+
+Install package with NPM.
+
+`npm install ecs-deployment-monitor --save`
+
+Remove `--save` and add the `-g` flag to install globally if you wish to use the CLI version.
 
 Possible Deployment States
 -----------------
@@ -36,7 +45,7 @@ Module Usage
 ------------
 
 ```js
-const monitor = require('ecs-service-deployment-monitor');
+const monitor = require('ecs-deployment-monitor');
 
 let deployment = monitor({
   serviceName: 'name',
@@ -54,7 +63,7 @@ CLI Usage
 ---------
 
 ```
-$ ecs-service-deployment-monitor \
+$ ecs-deployment-monitor \
     --cluster xxx \
     --service xxx \
     --task-definition xxx
