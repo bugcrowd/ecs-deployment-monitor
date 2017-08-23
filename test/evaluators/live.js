@@ -57,7 +57,7 @@ describe('Evaluator:Live', function() {
       .callsFake(() => true);
 
     var deployment = new Deployment({service: service, taskDefinitionArn: service.raw.taskDefinition});
-    deployment.history.push({state: 'StartingTasks'});
+    deployment.history.push({state: 'TasksStarted'});
     deployment.tasksStarted = [
       "arn::task:1",
       "arn::task:2",

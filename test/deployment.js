@@ -43,7 +43,7 @@ describe('Deployment', function() {
     var service = new EventEmitter();
     deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
     deployment.history.push({state: 'Created'});
-    deployment.history.push({state: 'StartingTasks'});
+    deployment.history.push({state: 'TasksStarted'});
     expect(deployment.isFailure()).to.equal(false);
     deployment.history.push({state: 'TasksFailed'});
     expect(deployment.isFailure()).to.equal(true);
@@ -120,13 +120,13 @@ describe('Deployment', function() {
       var evaluatorStubs = {
         'NotFound': evaluatorSpyFactory('NotFound', false),
         'Usurped': evaluatorSpyFactory('Usurped', false),
-        'StartingTasks': evaluatorSpyFactory('StartingTasks', false)
+        'TasksStarted': evaluatorSpyFactory('TasksStarted', false)
       };
 
       deployment.evaluate(evaluatorStubs, (err) => {
         expect(evaluatorStubs['NotFound'].calledOnce).to.equal(true);
         expect(evaluatorStubs['Usurped'].calledOnce).to.equal(true);
-        expect(evaluatorStubs['StartingTasks'].calledOnce).to.equal(true);
+        expect(evaluatorStubs['TasksStarted'].calledOnce).to.equal(true);
         done();
       });
     });
@@ -145,7 +145,7 @@ describe('Deployment', function() {
       var evaluatorStubs = {
         'NotFound': evaluatorSpyFactory('NotFound', false),
         'Usurped': evaluatorSpyFactory('Usurped', true),
-        'StartingTasks': evaluatorSpyFactory('StartingTasks', false)
+        'TasksStarted': evaluatorSpyFactory('TasksStarted', false)
       };
 
       deployment.evaluate(evaluatorStubs, _.noop);
@@ -157,12 +157,12 @@ describe('Deployment', function() {
       deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
 
       var evaluatorStubs = {
-        'StartingTasks': evaluatorSpyFactory('StartingTasks', true)
+        'TasksStarted': evaluatorSpyFactory('TasksStarted', true)
       };
 
       deployment.evaluate(evaluatorStubs, (err) => {
         deployment.evaluate(evaluatorStubs, (err) => {
-          expect(evaluatorStubs['StartingTasks'].calledOnce).to.equal(true);
+          expect(evaluatorStubs['TasksStarted'].calledOnce).to.equal(true);
           done();
         });
       });
