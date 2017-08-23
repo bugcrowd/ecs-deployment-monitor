@@ -35,7 +35,7 @@ The number of tasks which failed to start exceeded the defined failure threshold
 ### Live
 All new tasks have a healthy status as reported by targets on the Application Load Balancer. Tasks running with an old task definition revision are still running.
 
-### Draining
+### LiveExclusive
 No new requests will go to old tasks. Old tasks are draining.
 
 ### Steady
