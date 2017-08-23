@@ -45,7 +45,7 @@ describe('Deployment', function() {
     deployment.history.push({state: 'Created'});
     deployment.history.push({state: 'StartingTasks'});
     expect(deployment.isFailure()).to.equal(false);
-    deployment.history.push({state: 'FailedTasks'});
+    deployment.history.push({state: 'TasksFailed'});
     expect(deployment.isFailure()).to.equal(true);
   });
 

@@ -10,8 +10,8 @@ var Deployment = require('../../lib/deployment');
 var evaluators = require('../../lib/evaluators');
 
 
-describe('Evaluator:FailedTasks', function() {
-  var evaluator = evaluators['FailedTasks'];
+describe('Evaluator:TasksFailed', function() {
+  var evaluator = evaluators['TasksFailed'];
 
   it('should return FALSE when no tasks have failed', function(done) {
     var service = new EventEmitter();
