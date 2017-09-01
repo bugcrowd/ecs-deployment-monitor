@@ -13,22 +13,26 @@ var fixtures = require('./fixtures');
 describe('Service', function() {
   var targetHealthStub = null;
   var containerInstanceStub = null;
+  var serviceTasks = null;
 
   beforeEach(() => {
     targetHealthStub = sinon
       .stub(Service.prototype, "_targets")
-      .callsFake((cb) => {
-        cb(null, ['target']);
-      });
+      .callsFake((cb) => cb(null, ['target']));
 
     containerInstanceStub = sinon
       .stub(Service.prototype, "_clusterContainerInstances")
       .callsFake((cb) => cb(null, ['instance']));
+
+    serviceTasks = sinon
+      .stub(Service.prototype, "_tasks")
+      .callsFake((cb) => cb(null, ['task']));
   });
 
   afterEach(() => {
     targetHealthStub.restore();
     containerInstanceStub.restore();
+    serviceTasks.restore();
   });
 
   afterEach(helpers.afterEach);
@@ -196,6 +200,42 @@ describe('Service', function() {
       service._clusterContainerInstances((err, containerInstances) => {
         expect(containerInstances.length).to.equal(2);
         expect(containerInstances[0].ec2InstanceId).to.equal('i-1');
+        done();
+      });
+    });
+  });
+
+  describe('ServiceTasks', function() {
+    it('should return tasks in a service', function(done) {
+      serviceTasks.restore();
+
+      AWS.mock('ECS', 'listTasks', function (params, cb) {
+        expect(params.cluster).to.equal('cluster-yo');
+        expect(params.serviceName).to.equal('service-yo');
+
+        cb(null, {
+          taskArns: [
+            "arn::1",
+            "arn::2"
+          ]
+        });
+      });
+
+      AWS.mock('ECS', 'describeTasks', function (params, cb) {
+        expect(params.cluster).to.equal('cluster-yo');
+
+        cb(null, {
+          tasks: [
+            { taskArn: 'arn:task:1' },
+            { taskArn: 'arn:task:2' }
+          ]
+        });
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      service._tasks((err, tasks) => {
+        expect(tasks.length).to.equal(2);
+        expect(tasks[0].taskArn).to.equal("arn:task:1");
         done();
       });
     });
