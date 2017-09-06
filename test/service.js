@@ -11,25 +11,38 @@ var Service = require('../lib/service');
 var fixtures = require('./fixtures');
 
 describe('Service', function() {
+  var serviceDependencyFixtures = {
+    targets: ['target'],
+    containerInstances: ['instance'],
+    tasks: ['task']
+  };
+
+  var originalServiceDependencyFixtures = _.cloneDeep(serviceDependencyFixtures);
+
   var targetHealthStub = null;
   var containerInstanceStub = null;
   var serviceTasks = null;
 
+  function setServiceDependencyFixture(type, data) {
+    serviceDependencyFixtures[type] = data;
+  }
+
   beforeEach(() => {
     targetHealthStub = sinon
       .stub(Service.prototype, "_targets")
-      .callsFake((cb) => cb(null, ['target']));
+      .callsFake((cb) => cb(null, serviceDependencyFixtures['targets']));
 
     containerInstanceStub = sinon
       .stub(Service.prototype, "_clusterContainerInstances")
-      .callsFake((cb) => cb(null, ['instance']));
+      .callsFake((cb) => cb(null, serviceDependencyFixtures['containerInstances']));
 
     serviceTasks = sinon
       .stub(Service.prototype, "_tasks")
-      .callsFake((cb) => cb(null, ['task']));
+      .callsFake((cb) => cb(null, serviceDependencyFixtures['tasks']));
   });
 
   afterEach(() => {
+    serviceDependencyFixtures = _.cloneDeep(originalServiceDependencyFixtures);
     targetHealthStub.restore();
     containerInstanceStub.restore();
     serviceTasks.restore();
@@ -236,6 +249,83 @@ describe('Service', function() {
       service._tasks((err, tasks) => {
         expect(tasks.length).to.equal(2);
         expect(tasks[0].taskArn).to.equal("arn:task:1");
+        done();
+      });
+    });
+  });
+
+  describe('Target Health', function() {
+    beforeEach(() => {
+      setServiceDependencyFixture('targets', [
+        {
+          Target: {
+            Id: "i-1",
+            Port: 25001
+          },
+          TargetHealth: {
+            State: "unhealthy"
+          }
+        },
+        {
+          Target: {
+            Id: "i-1",
+            Port: 25002
+          },
+          TargetHealth: {
+            State: "healthy"
+          }
+        }
+      ]);
+
+      setServiceDependencyFixture('containerInstances', [
+        {
+          containerInstanceArn: 'arn::ci:1',
+          ec2InstanceId: 'i-1'
+        }
+      ]);
+
+      setServiceDependencyFixture('tasks', [
+        {
+          taskArn: 'arn::task:1',
+          containerInstanceArn: 'arn::ci:1',
+          containers: [
+            {
+              name: 'app',
+              networkBindings: [
+                {
+                  hostPort: 25001
+                }
+              ]
+            }
+          ]
+        },
+        {
+          taskArn: 'arn::task:2',
+          containerInstanceArn: 'arn::ci:1',
+          containers: [
+            {
+              name: 'app',
+              networkBindings: [
+                {
+                  hostPort: 25002
+                }
+              ]
+            }
+          ]
+        },
+      ]);
+    });
+
+    it('should report task health', function(done) {
+      AWS.mock('ECS', 'describeServices', function (params, cb){
+        cb(null, fixtures['newDeployment']);
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+
+      service.on('updated', function() {
+        expect(service.isTaskHealthy('arn::task:1')).to.equal(false);
+        expect(service.isTaskHealthy('arn::task:2')).to.equal(true);
         done();
       });
     });

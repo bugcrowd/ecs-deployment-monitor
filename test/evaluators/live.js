@@ -15,7 +15,6 @@ describe('Evaluator:Live', function() {
 
   it('should return FALSE when there are no active tasks', function(done) {
     var service = new EventEmitter();
-    service.initiated = true;
     service.raw = fixtures['newDeployment']['services'][0];
 
     var deployment = new Deployment({service: service, taskDefinitionArn: service.raw.taskDefinition});
@@ -29,32 +28,26 @@ describe('Evaluator:Live', function() {
 
   it('should return FALSE when active tasks are not healthy', function(done) {
     var service = new EventEmitter();
-    service.initiated = true;
     service.raw = fixtures['newDeployment']['services'][0];
 
-    var isTaskHealthyStub = sinon
-      .stub(Deployment.prototype, "isTaskHealthy")
-      .callsFake(() => false);
+    service.isTaskHealthy = () => false;
 
     var deployment = new Deployment({service: service, taskDefinitionArn: service.raw.taskDefinition});
+    deployment.history.push({state: 'TasksStarted'});
     deployment.tasksStarted = ["arn::task:1", "arn::task:2"];
 
     evaluator(deployment, (err, result) => {
       expect(result).to.equal(false);
       deployment.destroy();
-      isTaskHealthyStub.restore();
       done();
     });
   });
 
   it('should return TRUE when number of healthy tasks are equal to or greater than the desired count', function(done) {
     var service = new EventEmitter();
-    service.initiated = true;
     service.raw = fixtures['newDeployment']['services'][0];
 
-    var isTaskHealthyStub = sinon
-      .stub(Deployment.prototype, "isTaskHealthy")
-      .callsFake(() => true);
+    service.isTaskHealthy = () => true;
 
     var deployment = new Deployment({service: service, taskDefinitionArn: service.raw.taskDefinition});
     deployment.history.push({state: 'TasksStarted'});
@@ -68,7 +61,6 @@ describe('Evaluator:Live', function() {
     evaluator(deployment, (err, result) => {
       expect(result).to.equal(true);
       deployment.destroy();
-      isTaskHealthyStub.restore();
       done();
     });
   });
