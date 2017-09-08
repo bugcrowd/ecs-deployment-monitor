@@ -118,15 +118,15 @@ describe('Deployment', function() {
       deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
 
       var evaluatorStubs = {
-        'NotFound': evaluatorSpyFactory('NotFound', false),
         'Usurped': evaluatorSpyFactory('Usurped', false),
-        'TasksStarted': evaluatorSpyFactory('TasksStarted', false)
+        'TasksStarted': evaluatorSpyFactory('TasksStarted', false),
+        'TasksFailed': evaluatorSpyFactory('TasksFailed', false)
       };
 
       deployment.evaluate(evaluatorStubs, (err) => {
-        expect(evaluatorStubs['NotFound'].calledOnce).to.equal(true);
         expect(evaluatorStubs['Usurped'].calledOnce).to.equal(true);
         expect(evaluatorStubs['TasksStarted'].calledOnce).to.equal(true);
+        expect(evaluatorStubs['TasksFailed'].calledOnce).to.equal(true);
         done();
       });
     });

@@ -22,6 +22,10 @@ var deployment = new Deployment({
   service: service
 });
 
+service.on('event', (event) => {
+    console.log(event.raw);
+});
+
 deployment.on('error', (err) => {
   throw err;
 });
