@@ -9,21 +9,17 @@ const Service = require('../lib/service');
 const Deployment = require('../lib/deployment');
 
 var argv = require('yargs')
-  .demand([ 'cluster', 'service', 'task-definition' ])
+  .demand([ 'cluster', 'service-name', 'task-definition' ])
   .argv;
 
 var service = new Service({
-  serviceName: argv.service,
+  serviceName: argv.serviceName,
   clusterArn: argv.cluster
 });
 
 var deployment = new Deployment({
   taskDefinitionArn: argv.taskDefinition,
   service: service
-});
-
-service.on('event', (event) => {
-    console.log(event.raw);
 });
 
 deployment.on('error', (err) => {
