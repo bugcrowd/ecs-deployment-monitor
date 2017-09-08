@@ -14,6 +14,15 @@ Install package with NPM.
 
 Remove `--save` and add the `-g` flag to install globally if you wish to use the CLI version.
 
+Ensure you run the monitor with the following IAM permissions:
+
+ecs:DescribeContainerInstances
+ecs:DescribeServices
+ecs:DescribeTasks
+ecs:ListContainerInstances
+ecs:ListTasks
+elasticloadbalancing:DescribeTargetHealth
+
 Possible Deployment States
 -----------------
 
@@ -65,7 +74,7 @@ CLI Usage
 ```
 $ ecs-deployment-monitor \
     --cluster xxx \
-    --service xxx \
+    --service-name xxx \
     --task-definition xxx
 ```
 
@@ -75,5 +84,6 @@ $ ecs-deployment-monitor \
 -> Created
 -> TasksStarted
 -> Live
+-> Draining
 -> Steady
 ```
