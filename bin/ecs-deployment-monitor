@@ -1,36 +1,62 @@
 #!/usr/bin/env node
 
 const colors = require('colors/safe');
-const AWS = require('aws-sdk');
-
-AWS.config.update({region:'us-east-1'});
-
-const Service = require('../lib/service');
-const Deployment = require('../lib/deployment');
+const clui = require('clui');
+const monitor = require('../');
 
 var argv = require('yargs')
   .demand([ 'cluster', 'service-name', 'task-definition' ])
   .argv;
 
-var service = new Service({
+var deployment = monitor({
   serviceName: argv.serviceName,
-  clusterArn: argv.cluster
+  clusterArn: argv.cluster,
+  taskDefinitionArn: argv.taskDefinition,
 });
 
-var deployment = new Deployment({
-  taskDefinitionArn: argv.taskDefinition,
-  service: service
-});
+var spinner = new clui.Spinner(' ');
+
+var stateMap = {
+  'Created': {
+    'done': colors.gray('Deployment created'),
+    'waiting': 'Waiting for tasks to start',
+  },
+  'TasksStarted': {
+    'done': () => {
+      return colors.gray(`${deployment.service.raw.desiredCount} Tasks have started`);
+    },
+    'waiting': 'Waiting for new tasks to connect to the loadbalancer'
+  },
+  'Live': {
+    'done': colors.gray('All tasks are live and serving requests'),
+    'waiting': 'Waiting for old tasks to disconnect from the loadbalancer'
+  },
+  'Draining': {
+    'done': colors.gray('Old tasks are no longer serving new requests from the loadbalancer'),
+    'waiting': 'Waiting for active requests to old tasks to drain'
+  },
+  'Steady': {
+    'done': colors.green('Deployment was successful')
+  }
+}
 
 deployment.on('error', (err) => {
   throw err;
 });
 
 deployment.on('state', (state) => {
-  console.log(colors.cyan(`-> ${state}`));
-});
+  spinner.stop();
+  console.log(colors.cyan(`-> ${state} `));
+  var stateInfo = stateMap[state];
+  var doneMsg = stateInfo.done;
 
-deployment.on('end', (state) => {
-  service.destroy();
-  deployment.destroy();
+  if (typeof doneMsg === "function") {
+    doneMsg = doneMsg();
+  }
+
+  console.log('    '+doneMsg);
+  if (stateInfo.waiting) {
+    spinner.message(stateInfo.waiting);
+    spinner.start();
+  }
 });

@@ -6,7 +6,7 @@ const Deployment = require('./lib/deployment');
 
 module.exports = function(options) {
   // Set the default region to 'us-east-1' if not already set
-  if (!aws.config.region) {
+  if (!AWS.config.region) {
     AWS.config.update({
       region: process.env.AWS_DEFAULT_REGION || 'us-east-1'
     });
