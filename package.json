@@ -1,5 +1,5 @@
 {
-  "name": "ecs-service-deployment-monitor",
+  "name": "ecs-deployment-monitor",
   "version": "0.1.0",
   "description": "Monitor an ECS Deployment",
   "main": "index.js",
