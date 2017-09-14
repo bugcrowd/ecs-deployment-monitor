@@ -9,10 +9,11 @@ const EventEmitter = require('events');
 
 const helpers = require('./helpers');
 
-var Deployment = require('../lib/deployment');
-var Service = require('../lib/service');
-var events = require('../lib/events');
-var fixtures = require('./fixtures');
+const Deployment = require('../lib/deployment');
+const Service = require('../lib/service');
+const events = require('../lib/events');
+const taskLoader = require('./resources/tasks');
+const fixtures = require('./fixtures');
 
 describe('Deployment', function() {
   var deployment = null;
@@ -60,20 +61,33 @@ describe('Deployment', function() {
   it('should set raw deployment after service update', function(done) {
     var service = new EventEmitter();
     service.raw = {
-      deployments: [
-        {
-          taskDefinition: 'bla'
-        }
-      ]
+      deployments: [{taskDefinition: 'bla'}]
     };
 
     deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment.stoppedTasks = () => true;
     deployment._serviceUpdated();
 
     expect(deployment.raw).to.eql({
       taskDefinition: 'bla'
     });
     done();
+  });
+
+  it('should store failed tasks and emit updated on service update', function() {
+    var service = new EventEmitter();
+    service.raw = {
+      deployments: [{taskDefinition: 'bla'}]
+    };
+
+    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment.evaluate = () => true;
+    deployment.stoppedTasks = (cb) => cb(null, [{ taskArn: 'arn::1' }, { taskArn: 'arn::2' }]);
+    deployment.on('updated', () => {
+      expect(deployment.tasksFailed).to.eql(['arn::1', 'arn::2']);
+    });
+
+    deployment._serviceUpdated();
   });
 
   describe('Constructor', function() {
@@ -180,8 +194,8 @@ describe('Deployment', function() {
 
       var event = new events.TasksStartedEvent(service, { message: 'msg' });
       event.tasks = [
-        { taskArn: 1, taskDefinitionArn: taskArn, startedAt: Date.now() },
-        { taskArn: 2, taskDefinitionArn: taskArn, startedAt: Date.now() }
+        { taskArn: 1, taskDefinitionArn: taskArn, createdAt: Date.now() },
+        { taskArn: 2, taskDefinitionArn: taskArn, createdAt: Date.now() }
       ];
 
       deployment._serviceEventListener(event);
@@ -200,8 +214,8 @@ describe('Deployment', function() {
 
       var event = new events.TasksStoppedEvent(service, { message: 'msg' });
       event.tasks = [
-        { taskArn: 1, taskDefinitionArn: taskArn, startedAt: Date.now() },
-        { taskArn: 2, taskDefinitionArn: taskArn, startedAt: Date.now() }
+        { taskArn: 1, taskDefinitionArn: taskArn, createdAt: Date.now() },
+        { taskArn: 2, taskDefinitionArn: taskArn, createdAt: Date.now() }
       ];
 
       deployment._serviceEventListener(event);

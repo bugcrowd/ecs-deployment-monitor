@@ -2,6 +2,7 @@
 
 const colors = require('colors/safe');
 const clui = require('clui');
+const moment = require('moment');
 const monitor = require('../');
 
 var argv = require('yargs')
@@ -17,15 +18,29 @@ var deployment = monitor({
 var spinner = new clui.Spinner(' ');
 
 var stateMap = {
+  'NotFound': {
+    'done': `ECS Deployment for task definition "${deployment.options.taskDefinitionArn}" not found`,
+    'exitCode': 2
+  },
+  'Usurped': {
+    'done': `A newer deployment is in progress, this deployment is no longer primary deployment`,
+    'exitCode': 3
+  },
   'Created': {
     'done': colors.gray('Deployment created'),
     'waiting': 'Waiting for tasks to start',
   },
   'TasksStarted': {
     'done': () => {
-      return colors.gray(`${deployment.service.raw.desiredCount} Tasks have started`);
+      return colors.gray(`${deployment.tasksStarted.length} Tasks have started`);
     },
     'waiting': 'Waiting for new tasks to connect to the loadbalancer'
+  },
+  'TasksFailed': {
+    'done': () => {
+      return colors.gray(`${deployment.tasksFailed.length} Tasks have failed`);
+    },
+    'exitCode': 1
   },
   'Live': {
     'done': colors.gray('All tasks are live and serving requests'),
@@ -36,7 +51,8 @@ var stateMap = {
     'waiting': 'Waiting for active requests to old tasks to drain'
   },
   'Steady': {
-    'done': colors.green('Deployment was successful')
+    'done': colors.green('Deployment was successful'),
+    'exitCode': 0
   }
 }
 
@@ -45,18 +61,30 @@ deployment.on('error', (err) => {
 });
 
 deployment.on('state', (state) => {
+  var stateInfo = stateMap[state];
+
   spinner.stop();
   console.log(colors.cyan(`-> ${state} `));
-  var stateInfo = stateMap[state];
-  var doneMsg = stateInfo.done;
 
+  // Display done message
+  var doneMsg = stateInfo.done;
   if (typeof doneMsg === "function") {
     doneMsg = doneMsg();
   }
 
+  if (stateInfo.exitCode && stateInfo.exitCode > 0) {
+    doneMsg = colors.red(doneMsg);
+  }
   console.log('    '+doneMsg);
+
+  // Display waiting message
   if (stateInfo.waiting) {
     spinner.message(stateInfo.waiting);
     spinner.start();
+  }
+
+  // Exit if needed
+  if (stateInfo.exitCode) {
+    process.exit(stateInfo.exitCode);
   }
 });

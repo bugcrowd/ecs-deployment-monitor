@@ -50,6 +50,39 @@ No new requests will go to old tasks. Old tasks are draining.
 ### Steady
 ECS Service has reached a steady state
 
+CLI Usage
+---------
+
+```
+$ ecs-deployment-monitor \
+    --cluster xxx \
+    --service-name xxx \
+    --task-definition xxx
+```
+
+### Example output
+
+```
+-> Created
+    Deployment created
+-> TasksStarted
+    4 Tasks have started
+-> Live
+    All tasks are live and serving requests
+-> Draining
+    Old tasks are no longer serving new requests from the loadbalancer
+-> Steady
+    Deployment was successful
+```
+
+### Failed Deployments
+
+Failed deployments will exit with a non-zero exit code. The following states are failed deploys:
+
+   - TasksFailed will exit with an exit code of 1
+   - NotFound will exit with an exit code of 2
+   - Usurped will exit with an exit code of 3
+
 Module Usage
 ------------
 
@@ -66,24 +99,4 @@ deployment.on('error', (error) => console.log(error));
 deployment.on('state', (state) => console.log(state));
 deployment.on('end', (state) => console.log('DONE'));
 
-```
-
-CLI Usage
----------
-
-```
-$ ecs-deployment-monitor \
-    --cluster xxx \
-    --service-name xxx \
-    --task-definition xxx
-```
-
-### Example output
-
-```
--> Created
--> TasksStarted
--> Live
--> Draining
--> Steady
 ```
