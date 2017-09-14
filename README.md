@@ -5,6 +5,8 @@ ECS Deployment Monitor will help you monitor the status of a deployment of a new
 
 Its primary use case it to identify when a deploy fails. When containers in a task fail to start, ECS will terminate the task and start a new one. This is a great feature until you have a version of your application that will not start. In this scenario ECS will continue to start and stop tasks indefinitely, while leaving you none the wiser that your deploy has failed and an old version of your application is still running.
 
+This monitor uses the healthy status on Target Group Targets to determine if a task is healthy. Thus use of an Application Load Balancer or Network Load Balancer is assumed and this monitor will not work without one.
+
 Installation
 ------------
 
@@ -16,12 +18,14 @@ Remove `--save` and add the `-g` flag to install globally if you wish to use the
 
 Ensure you run the monitor with the following IAM permissions:
 
+```
 ecs:DescribeContainerInstances
 ecs:DescribeServices
 ecs:DescribeTasks
 ecs:ListContainerInstances
 ecs:ListTasks
 elasticloadbalancing:DescribeTargetHealth
+```
 
 Possible Deployment States
 -----------------
