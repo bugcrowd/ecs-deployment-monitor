@@ -75,20 +75,11 @@ $ ecs-deployment-monitor \
 
 ### Example output
 
-```
--> Created
-    Deployment created
--> TasksStarted
-    4 Tasks have started
--> Live
-    All tasks are live and serving requests
--> Draining
-    Old tasks are no longer serving new requests from the loadbalancer
--> Steady
-    Deployment was successful
-```
+![standard-requests](./docs/deploy-successful.png)
 
 ### Failed Deployments
+
+![standard-requests](./docs/deploy-fail.png)
 
 Failed deployments will exit with a non-zero exit code. The following states are failed deploys:
 
