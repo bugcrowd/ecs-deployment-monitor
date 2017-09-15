@@ -1,10 +1,13 @@
 {
   "name": "ecs-deployment-monitor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Monitor an ECS Deployment",
   "main": "index.js",
   "scripts": {
     "test": "node_modules/.bin/mocha --recursive"
+  },
+  "bin" : {
+    "ecs-deployment-monitor" : "./bin/ecs-deployment-monitor"
   },
   "author": "Coen Hyde",
   "license": "MIT",
