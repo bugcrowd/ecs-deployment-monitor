@@ -204,26 +204,6 @@ describe('Deployment', function() {
       done();
     });
 
-    it('should process a TasksStoppedEvent and record the tasks failed', function(done) {
-      var taskArn = 'arn:task';
-      var service = new EventEmitter();
-      deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
-      deployment.raw = {
-        createdAt: Date.now() - 5
-      }
-
-      var event = new events.TasksStoppedEvent(service, { message: 'msg' });
-      event.tasks = [
-        { taskArn: 1, taskDefinitionArn: taskArn, createdAt: Date.now() },
-        { taskArn: 2, taskDefinitionArn: taskArn, createdAt: Date.now() }
-      ];
-
-      deployment._serviceEventListener(event);
-
-      expect(deployment.tasksFailed).to.eql([1,2]);
-      done();
-    });
-
     it('should process a SteadyEvent and mark deployment as steady', function(done) {
       var taskArn = 'arn:task';
       var service = new EventEmitter();
