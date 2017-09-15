@@ -18,14 +18,15 @@ var deployment = monitor({
 });
 
 var spinner = new clui.Spinner(' ');
+var startedAt = Date.now();
 
 var stateMap = {
   'NotFound': {
-    'done': `ECS Deployment for task definition "${deployment.options.taskDefinitionArn}" not found`,
+    'done': colors.red(`ECS Deployment for task definition "${deployment.options.taskDefinitionArn}" not found`),
     'exitCode': 2
   },
   'Usurped': {
-    'done': `A newer deployment is in progress, this deployment is no longer primary deployment`,
+    'done': colors.red(`A newer deployment is in progress, this deployment is no longer primary deployment`),
     'exitCode': 3
   },
   'Created': {
@@ -40,7 +41,7 @@ var stateMap = {
   },
   'TasksFailed': {
     'done': () => {
-      return colors.gray(`${deployment.tasksFailed.length} Tasks have failed`);
+      return colors.red(`${deployment.tasksFailed.length} Tasks have failed`);
     },
     'exitCode': 1
   },
@@ -64,9 +65,22 @@ deployment.on('error', (err) => {
 
 deployment.on('state', (state) => {
   var stateInfo = stateMap[state];
+  var durationSeconds = (Date.now() - startedAt)/1000;
+  var duration = moment.duration(durationSeconds, 'seconds');
+  var durationText = `${duration.seconds()} seconds`;
+
+  if (duration.minutes()) {
+    durationText = `${duration.minutes()} minutes ${durationText}`
+  }
+
+  if (duration.hours()) {
+    durationText = `${duration.hours()} hours ${durationText}`
+  }
+
+  durationText = colors.gray(`(${durationText})`);
 
   spinner.stop();
-  console.log(colors.cyan(`-> ${state} `));
+  console.log(colors.cyan(`-> ${state}`)+` ${durationText}`);
 
   // Display done message
   var doneMsg = stateInfo.done;
@@ -74,9 +88,6 @@ deployment.on('state', (state) => {
     doneMsg = doneMsg();
   }
 
-  if (stateInfo.exitCode && stateInfo.exitCode > 0) {
-    doneMsg = colors.red(doneMsg);
-  }
   console.log('    '+doneMsg);
 
   // Display waiting message
