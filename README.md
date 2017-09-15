@@ -1,7 +1,7 @@
 ECS Deployment Monitor
 ==============================
 
-ECS Deployment Monitor will help you monitor the status of a deployment of a new task definition to an ECS Service.
+ECS Deployment Monitor will help you monitor the status of a deployment of a new task definition to an ECS Service. It does not do the deployment its self.
 
 Its primary use case it to identify when a deploy fails. When containers in a task fail to start, ECS will terminate the task and start a new one. This is a great feature until you have a version of your application that will not start. In this scenario ECS will continue to start and stop tasks indefinitely, while leaving you none the wiser that your deploy has failed and an old version of your application is still running.
 
@@ -56,6 +56,15 @@ ECS Service has reached a steady state
 
 CLI Usage
 ---------
+
+If this module is installed globally an executable `ecs-deployment-monitor` should be available
+
+### Options
+
+   - cluster (required) - The arn of the ECS Cluster that is hosting the service
+   - service-name (required) - The name of the ECS Service
+   - task-definition (required) - The arn of the ECS Task Definition that was deployed
+   - failure-threshold (optional) - The percentage of failed tasks from desired tasks which is triggers a failed deploy. Defaults to 25%. Expects a float. eg `.50` would represent a threshold of 50%
 
 ```
 $ ecs-deployment-monitor \

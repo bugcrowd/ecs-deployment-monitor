@@ -19,6 +19,7 @@ module.exports = function(options) {
 
   let deployment = new Deployment({
     taskDefinitionArn: options.taskDefinitionArn,
+    failureThreshold: options.failureThreshold,
     service: service
   });
 

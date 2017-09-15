@@ -7,12 +7,14 @@ const monitor = require('../');
 
 var argv = require('yargs')
   .demand([ 'cluster', 'service-name', 'task-definition' ])
+  .default('failure-threshold', '.25')
   .argv;
 
 var deployment = monitor({
   serviceName: argv.serviceName,
   clusterArn: argv.cluster,
   taskDefinitionArn: argv.taskDefinition,
+  failureThreshold: parseFloat(argv.failureThreshold),
 });
 
 var spinner = new clui.Spinner(' ');
