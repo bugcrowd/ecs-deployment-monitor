@@ -252,6 +252,30 @@ describe('Service', function() {
         done();
       });
     });
+
+    it('should handle no tasks in a service', function(done) {
+      serviceTasks.restore();
+
+      AWS.mock('ECS', 'listTasks', function (params, cb) {
+        expect(params.cluster).to.equal('cluster-yo');
+        expect(params.serviceName).to.equal('service-yo');
+
+        cb(null, {
+          taskArns: []
+        });
+      });
+
+      AWS.mock('ECS', 'describeTasks', function (params, cb) {
+        // We should not be calling describe tasks when no tasks are in the service
+        expect(true).to.equal(false);
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      service._tasks((err, tasks) => {
+        expect(tasks.length).to.equal(0);
+        done();
+      });
+    });
   });
 
   describe('Target Health', function() {
