@@ -3,7 +3,11 @@
 const colors = require('colors/safe');
 const clui = require('clui');
 const moment = require('moment');
+const _ = require('lodash');
+const indent = require('indent');
 const monitor = require('../');
+
+const indentWidth = 4;
 
 var argv = require('yargs')
   .demand([ 'cluster', 'service-name', 'task-definition' ])
@@ -42,6 +46,13 @@ var stateMap = {
   'TasksFailed': {
     'done': () => {
       return colors.red(`${deployment.tasksFailed.length} Tasks have failed`);
+    },
+    'extra': () => {
+      let str = "\nFailure Reasons\n";
+      _.each(deployment.tasksFailedFull, (task) => {
+        str += `\nTask: ${task.taskArn}\nReason: ${task.stoppedReason}\n`
+      });
+      return colors.red(str);
     },
     'exitCode': 1
   },
@@ -88,12 +99,21 @@ deployment.on('state', (state) => {
     doneMsg = doneMsg();
   }
 
-  console.log('    '+doneMsg);
+  console.log(indent(doneMsg, indentWidth));
 
   // Display waiting message
   if (stateInfo.waiting) {
     spinner.message(stateInfo.waiting);
     spinner.start();
+  }
+
+  var extraMsg = stateInfo.extra;
+  if (typeof extraMsg === "function") {
+    extraMsg = extraMsg();
+  }
+
+  if (extraMsg && extraMsg.length > 0) {
+    console.log(indent(extraMsg, indentWidth));
   }
 
   // Exit if needed
