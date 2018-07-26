@@ -1,15 +1,7 @@
 #!/usr/bin/env node
 'use strict'
 
-const colors = require('colors/safe');
-const clui = require('clui');
-const moment = require('moment');
-const _ = require('lodash');
-const indent = require('indent');
 const monitor = require('../');
-const Renderer = require('../lib/renderer');
-
-const indentWidth = 4;
 
 var argv = require('yargs')
   .demand([ 'cluster', 'service-name', 'task-definition' ])
@@ -21,8 +13,8 @@ var deployment = monitor({
   clusterArn: argv.cluster,
   taskDefinitionArn: argv.taskDefinition,
   failureThreshold: parseFloat(argv.failureThreshold),
+  outputStream: process.stdout
 });
 
-deployment.on('error', (err) => { throw err } );
-
-Renderer.watch(deployment, process.stdout);
+deployment.on('error', (err) => { throw err });
+deployment.on('exitCode', (exitCode) => process.exit(exitCode));
