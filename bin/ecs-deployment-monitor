@@ -7,6 +7,7 @@ const moment = require('moment');
 const _ = require('lodash');
 const indent = require('indent');
 const monitor = require('../');
+const Renderer = require('../lib/renderer');
 
 const indentWidth = 4;
 
@@ -22,103 +23,6 @@ var deployment = monitor({
   failureThreshold: parseFloat(argv.failureThreshold),
 });
 
-var spinner = new clui.Spinner(' ');
-var startedAt = Date.now();
+deployment.on('error', (err) => { throw err } );
 
-var stateMap = {
-  'NotFound': {
-    'done': colors.red(`ECS Deployment for task definition "${deployment.options.taskDefinitionArn}" not found`),
-    'exitCode': 2
-  },
-  'Usurped': {
-    'done': colors.red(`A newer deployment is in progress, this deployment is no longer primary deployment`),
-    'exitCode': 3
-  },
-  'Created': {
-    'done': colors.gray('Deployment created'),
-    'waiting': 'Waiting for tasks to start',
-  },
-  'TasksStarted': {
-    'done': () => {
-      return colors.gray(`${deployment.tasksStarted.length} Tasks have started`);
-    },
-    'waiting': 'Waiting for new tasks to connect to the loadbalancer'
-  },
-  'TasksFailed': {
-    'done': () => {
-      return colors.red(`${deployment.tasksFailed.length} Tasks have failed`);
-    },
-    'extra': () => {
-      let str = "\nFailure Reasons\n";
-      _.each(deployment.tasksFailedFull, (task) => {
-        str += `\nTask: ${task.taskArn}\nReason: ${task.stoppedReason}\n`
-      });
-      return colors.red(str);
-    },
-    'exitCode': 1
-  },
-  'Live': {
-    'done': colors.gray('All tasks are live and serving requests'),
-    'waiting': 'Waiting for old tasks to disconnect from the loadbalancer'
-  },
-  'Draining': {
-    'done': colors.gray('Old tasks are no longer serving new requests from the loadbalancer'),
-    'waiting': 'Waiting for active requests to old tasks to drain'
-  },
-  'Steady': {
-    'done': colors.green('Deployment was successful'),
-    'exitCode': 0
-  }
-}
-
-deployment.on('error', (err) => {
-  throw err;
-});
-
-deployment.on('state', (state) => {
-  var stateInfo = stateMap[state];
-  var durationSeconds = (Date.now() - startedAt)/1000;
-  var duration = moment.duration(durationSeconds, 'seconds');
-  var durationText = `${duration.seconds()} seconds`;
-
-  if (duration.minutes()) {
-    durationText = `${duration.minutes()} minutes ${durationText}`
-  }
-
-  if (duration.hours()) {
-    durationText = `${duration.hours()} hours ${durationText}`
-  }
-
-  durationText = colors.gray(`(${durationText})`);
-
-  spinner.stop();
-  console.log(colors.cyan(`-> ${state}`)+` ${durationText}`);
-
-  // Display done message
-  var doneMsg = stateInfo.done;
-  if (typeof doneMsg === "function") {
-    doneMsg = doneMsg();
-  }
-
-  console.log(indent(doneMsg, indentWidth));
-
-  // Display waiting message
-  if (stateInfo.waiting) {
-    spinner.message(stateInfo.waiting);
-    spinner.start();
-  }
-
-  var extraMsg = stateInfo.extra;
-  if (typeof extraMsg === "function") {
-    extraMsg = extraMsg();
-  }
-
-  if (extraMsg && extraMsg.length > 0) {
-    console.log(indent(extraMsg, indentWidth));
-  }
-
-  // Exit if needed
-  if (stateInfo.exitCode) {
-    process.exit(stateInfo.exitCode);
-  }
-});
+Renderer.watch(deployment, process.stdout);
