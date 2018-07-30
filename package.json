@@ -12,22 +12,24 @@
   "author": "Coen Hyde",
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk-mock": "^1.7.0",
+    "aws-sdk-mock": "^4.0.0",
     "expect.js": "^0.3.1",
     "mocha": "^3.5.0",
-    "sinon": "^3.2.1"
+    "sinon": "^3.2.1",
+    "stream-buffers": "^3.0.2",
+    "timekeeper": "^2.1.2"
   },
   "dependencies": {
-    "async": "^2.4.1",
-    "aws-sdk": "^2.49.0",
+    "async": "^2.6.1",
+    "aws-sdk": "^2.282.1",
     "clui": "^0.3.6",
     "colors": "^1.1.2",
     "indent": "0.0.2",
     "inflection": "^1.12.0",
-    "lodash": "^4.17.4",
-    "moment": "^2.18.1",
+    "lodash": "^4.17.10",
+    "moment": "^2.22.2",
     "requirize": "^0.1.3",
-    "winston": "^3.0.0-rc0",
+    "winston": "^3.0.0",
     "yargs": "^7.0.2"
   }
 }
