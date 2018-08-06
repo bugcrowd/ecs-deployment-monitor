@@ -1,10 +1,11 @@
 #!/usr/bin/env node
+
 'use strict'
 
 const monitor = require('../');
 
 var argv = require('yargs')
-  .demand([ 'cluster', 'service-name', 'task-definition' ])
+  .demand(['cluster', 'service-name', 'task-definition'])
   .default('failure-threshold', '.25')
   .argv;
 
@@ -16,5 +17,7 @@ var deployment = monitor({
   outputStream: process.stdout
 });
 
-deployment.on('error', (err) => { throw err });
-deployment.on('exitCode', (exitCode) => process.exit(exitCode));
+deployment.on('error', (err) => {
+  throw err
+});
+// deployment.on('exitCode', (exitCode) => process.exit(exitCode));
