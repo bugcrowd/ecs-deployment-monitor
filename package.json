@@ -1,6 +1,6 @@
 {
   "name": "ecs-deployment-monitor",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Monitor an ECS Deployment",
   "main": "index.js",
   "scripts": {
