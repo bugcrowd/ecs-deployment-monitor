@@ -74,6 +74,41 @@ describe('Deployment', function() {
     done();
   });
 
+  it('should not trigger NotFound state if it doesnt find the deployment on first attempt', function(done) {
+    var service = new EventEmitter();
+    service.raw = {
+      deployments: [{taskDefinition: 'yo'}]
+    };
+
+    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment.stoppedTasks = () => true;
+    deployment._serviceUpdated();
+
+    expect(deployment.raw).to.equal(undefined);
+    expect(deployment.hasState('NotFound')).to.equal(false);
+    done();
+  });
+
+  it('should set state as NotFound if deployment wasnt found after 3 attempts', function(done) {
+    var service = new EventEmitter();
+    service.raw = {
+      deployments: [{taskDefinition: 'yo'}]
+    };
+
+    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment.stoppedTasks = () => true;
+    deployment._serviceUpdated();
+    deployment._serviceUpdated();
+    deployment._serviceUpdated();
+
+    // Should set NotFound state
+    deployment._serviceUpdated();
+
+    expect(deployment.raw).to.equal(undefined);
+    expect(deployment.hasState('NotFound')).to.equal(true);
+    done();
+  });
+
   it('should store failed tasks and emit updated on service update', function() {
     var service = new EventEmitter();
     service.raw = {
@@ -157,7 +192,6 @@ describe('Deployment', function() {
       deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
 
       var evaluatorStubs = {
-        'NotFound': evaluatorSpyFactory('NotFound', false),
         'Usurped': evaluatorSpyFactory('Usurped', true),
         'TasksStarted': evaluatorSpyFactory('TasksStarted', false)
       };
