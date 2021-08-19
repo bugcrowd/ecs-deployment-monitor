@@ -278,7 +278,7 @@ describe('Service', function() {
     });
   });
 
-  describe('Target Health', function() {
+  describe('Target Health EC2', function() {
     beforeEach(() => {
       setServiceDependencyFixture('targets', [
         {
@@ -350,6 +350,95 @@ describe('Service', function() {
       service.on('updated', function() {
         expect(service.isTaskHealthy('arn::task:1')).to.equal(false);
         expect(service.isTaskHealthy('arn::task:2')).to.equal(true);
+        done();
+      });
+    });
+  });
+
+  describe('Target Health Fargate', function() {
+    beforeEach(() => {
+      setServiceDependencyFixture('targets', [
+        {
+          Target: {
+            Ip: "192.0.2.1",
+            Port: 25001
+          },
+          TargetHealth: {
+            State: "healthy"
+          }
+        },
+        {
+          Target: {
+            Ip: "192.0.2.2",
+            Port: 25002
+          },
+          TargetHealth: {
+            State: "healthy"
+          }
+        },
+        {
+          Target: {
+            Ip: "192.0.2.3",
+            Port: 25003
+          },
+          TargetHealth: {
+            State: "healthy"
+          }
+        }
+      ]);
+
+      setServiceDependencyFixture('tasks', [
+        {
+          taskArn: 'arn::fargate-task:1',
+          containers: [
+            {
+              name: 'app',
+              networkBindings: [
+                {
+                  hostPort: 25001
+                }
+              ]
+            }
+          ]
+        },
+        {
+          taskArn: 'arn::fargate-task:1',
+          containers: [
+            {
+              name: 'app',
+              networkBindings: [
+                {
+                  hostPort: 25002
+                }
+              ]
+            }
+          ]
+        },
+        {
+          taskArn: 'arn::fargate-task:1',
+          containers: [
+            {
+              name: 'app',
+              networkBindings: [
+                {
+                  hostPort: 25003
+                }
+              ]
+            }
+          ]
+        },
+      ]);
+    });
+
+    it('should report task health', function(done) {
+      AWS.mock('ECS', 'describeServices', function (params, cb){
+        cb(null, fixtures['fargateDeployment']);
+      });
+
+      var service = new Service({clusterArn: 'arn:aws:ecs:us-east-1:12345789012:cluster/mycluster', serviceName: 'my-test-application'});
+
+      service.on('updated', function() {
+        expect(service.isTaskHealthy('arn::fargate-task:1')).to.equal(true);
         done();
       });
     });
