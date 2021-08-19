@@ -53,13 +53,13 @@ describe('Service', function() {
   describe('Constructor', function() {
     it('should return call describeServices with correct params', function(done) {
       AWS.mock('ECS', 'describeServices', function (params, cb){
-        expect(params.cluster).to.equal('cluster-yo');
-        expect(params.services).to.eql(['service-yo']);
+        expect(params.cluster).to.equal('cluster-yo0');
+        expect(params.services).to.eql(['service-yo0']);
         service.destroy();
         done();
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo0', serviceName: 'service-yo0'});
     });
 
     it('should return call _clusterContainerInstances', function(done) {
@@ -67,7 +67,7 @@ describe('Service', function() {
         cb(null, fixtures['newDeployment']);
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo1', serviceName: 'service-yo1'});
       service.on('updated', () => {
         expect(service.clusterContainerInstances).to.eql(['instance']);
         done();
@@ -81,7 +81,7 @@ describe('Service', function() {
         cb(null, fixtures['newDeployment']);
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo2', serviceName: 'service-yo2'});
       var events = service._pluckEventsSince(fixtures['newDeployment']['services'][0]['events'], 1494960755);
       service.destroy();
 
@@ -98,7 +98,7 @@ describe('Service', function() {
         cb(null, { tasks: [1,2,3,4] });
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo3', serviceName: 'service-yo3'});
 
       service.on('event', (event) => {
         expect(event.raw.id).to.equal("e1e75594-b9c9-4c32-bb90-89801bd89a62");
@@ -138,7 +138,11 @@ describe('Service', function() {
         });
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      AWS.mock('ECS', 'describeServices', (params, cb) => {
+        cb(null, fixtures['newDeployment']);
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo4', serviceName: 'service-yo4'});
       service.on('updated', () => {
         expect(service.targets.length).to.equal(1);
         done();
@@ -150,7 +154,11 @@ describe('Service', function() {
         cb(null, fixtures['newDeployment']);
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      AWS.mock('ECS', 'describeServices', (params, cb) => {
+        cb(null, fixtures['newDeployment']);
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo5', serviceName: 'service-yo5'});
       service.on('updated', () => {
         service.targets = [
           {
@@ -188,7 +196,7 @@ describe('Service', function() {
       containerInstanceStub.restore();
 
       AWS.mock('ECS', 'listContainerInstances', function (params, cb) {
-        expect(params.cluster).to.equal('cluster-yo');
+        expect(params.cluster).to.equal('cluster-yo6');
 
         cb(null, {
           containerInstanceArns: [
@@ -199,7 +207,7 @@ describe('Service', function() {
       });
 
       AWS.mock('ECS', 'describeContainerInstances', function (params, cb) {
-        expect(params.cluster).to.equal('cluster-yo');
+        expect(params.cluster).to.equal('cluster-yo6');
 
         cb(null, {
           containerInstances: [
@@ -209,7 +217,11 @@ describe('Service', function() {
         });
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      AWS.mock('ECS', 'describeServices', (params, cb) => {
+        cb(null, fixtures['newDeployment']);
+      });
+
+      var service = new Service({clusterArn: 'cluster-yo6', serviceName: 'service-yo6'});
       service._clusterContainerInstances((err, containerInstances) => {
         expect(containerInstances.length).to.equal(2);
         expect(containerInstances[0].ec2InstanceId).to.equal('i-1');
@@ -223,8 +235,8 @@ describe('Service', function() {
       serviceTasks.restore();
 
       AWS.mock('ECS', 'listTasks', function (params, cb) {
-        expect(params.cluster).to.equal('cluster-yo');
-        expect(params.serviceName).to.equal('service-yo');
+        expect(params.cluster).to.equal('cluster-yo7');
+        expect(params.serviceName).to.equal('service-yo7');
 
         cb(null, {
           taskArns: [
@@ -234,8 +246,12 @@ describe('Service', function() {
         });
       });
 
+      AWS.mock('ECS', 'describeServices', (params, cb) => {
+        cb(null, fixtures['newDeployment']);
+      });
+
       AWS.mock('ECS', 'describeTasks', function (params, cb) {
-        expect(params.cluster).to.equal('cluster-yo');
+        expect(params.cluster).to.equal('cluster-yo7');
 
         cb(null, {
           tasks: [
@@ -245,7 +261,7 @@ describe('Service', function() {
         });
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo7', serviceName: 'service-yo7'});
       service._tasks((err, tasks) => {
         expect(tasks.length).to.equal(2);
         expect(tasks[0].taskArn).to.equal("arn:task:1");
@@ -256,9 +272,13 @@ describe('Service', function() {
     it('should handle no tasks in a service', function(done) {
       serviceTasks.restore();
 
+      AWS.mock('ECS', 'describeServices', (params, cb) => {
+        cb(null, fixtures['newDeployment']);
+      });
+
       AWS.mock('ECS', 'listTasks', function (params, cb) {
-        expect(params.cluster).to.equal('cluster-yo');
-        expect(params.serviceName).to.equal('service-yo');
+        expect(params.cluster).to.equal('cluster-yo8');
+        expect(params.serviceName).to.equal('service-yo8');
 
         cb(null, {
           taskArns: []
@@ -270,7 +290,7 @@ describe('Service', function() {
         expect(true).to.equal(false);
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo8', serviceName: 'service-yo8'});
       service._tasks((err, tasks) => {
         expect(tasks.length).to.equal(0);
         done();
@@ -345,7 +365,7 @@ describe('Service', function() {
         cb(null, fixtures['newDeployment']);
       });
 
-      var service = new Service({clusterArn: 'cluster-yo', serviceName: 'service-yo'});
+      var service = new Service({clusterArn: 'cluster-yo9', serviceName: 'service-yo9'});
 
       service.on('updated', function() {
         expect(service.isTaskHealthy('arn::task:1')).to.equal(false);
