@@ -30,15 +30,15 @@ describe('Service', function() {
   beforeEach(() => {
     targetHealthStub = sinon
         .stub(Service.prototype, '_targets')
-        .callsFake((cb) => cb(null, serviceDependencyFixtures['targets']));
+        .callsFake(() => serviceDependencyFixtures['targets']);
 
     containerInstanceStub = sinon
         .stub(Service.prototype, '_clusterContainerInstances')
-        .callsFake((cb) => cb(null, serviceDependencyFixtures['containerInstances']));
+        .callsFake(() => serviceDependencyFixtures['containerInstances']);
 
     serviceTasks = sinon
         .stub(Service.prototype, '_tasks')
-        .callsFake((cb) => cb(null, serviceDependencyFixtures['tasks']));
+        .callsFake(() => serviceDependencyFixtures['tasks']);
   });
 
   afterEach(() => {
@@ -192,7 +192,7 @@ describe('Service', function() {
   });
 
   describe('ClusterContainerInstances', function() {
-    it('should return container instances', function(done) {
+    it('should return container instances', async function() {
       containerInstanceStub.restore();
 
       AWS.mock('ECS', 'listContainerInstances', function(params, cb) {
@@ -222,16 +222,14 @@ describe('Service', function() {
       });
 
       const service = new Service({clusterArn: 'cluster-6', serviceName: 'service-6'});
-      service._clusterContainerInstances((err, containerInstances) => {
-        expect(containerInstances.length).to.equal(2);
-        expect(containerInstances[0].ec2InstanceId).to.equal('i-1');
-        done();
-      });
+      const containerInstances = await service._clusterContainerInstances();
+      expect(containerInstances.length).to.equal(2);
+      expect(containerInstances[0].ec2InstanceId).to.equal('i-1');
     });
   });
 
   describe('ServiceTasks', function() {
-    it('should return tasks in a service', function(done) {
+    it('should return tasks in a service', async function() {
       serviceTasks.restore();
 
       AWS.mock('ECS', 'listTasks', function(params, cb) {
@@ -262,14 +260,12 @@ describe('Service', function() {
       });
 
       const service = new Service({clusterArn: 'cluster-7', serviceName: 'service-7'});
-      service._tasks((err, tasks) => {
-        expect(tasks.length).to.equal(2);
-        expect(tasks[0].taskArn).to.equal('arn:task:1');
-        done();
-      });
+      const tasks = await service._tasks();
+      expect(tasks.length).to.equal(2);
+      expect(tasks[0].taskArn).to.equal('arn:task:1');
     });
 
-    it('should handle no tasks in a service', function(done) {
+    it('should handle no tasks in a service', async function() {
       serviceTasks.restore();
 
       AWS.mock('ECS', 'describeServices', (params, cb) => {
@@ -291,10 +287,8 @@ describe('Service', function() {
       });
 
       const service = new Service({clusterArn: 'cluster-8', serviceName: 'service-8'});
-      service._tasks((err, tasks) => {
-        expect(tasks.length).to.equal(0);
-        done();
-      });
+      const tasks = await service._tasks();
+      expect(tasks.length).to.equal(0);
     });
   });
 
