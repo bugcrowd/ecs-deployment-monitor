@@ -59,7 +59,7 @@ describe('Service', function() {
         done();
       });
 
-      var service = new Service({clusterArn: 'cluster-0', serviceName: 'service-0'});
+      const service = new Service({clusterArn: 'cluster-0', serviceName: 'service-0'});
     });
 
     it('should return call _clusterContainerInstances', function(done) {
@@ -70,6 +70,7 @@ describe('Service', function() {
       const service = new Service({clusterArn: 'cluster-1', serviceName: 'service-1'});
       service.on('updated', () => {
         expect(service.clusterContainerInstances).to.eql(['instance']);
+        service.destroy();
         done();
       });
     });
@@ -145,6 +146,7 @@ describe('Service', function() {
       const service = new Service({clusterArn: 'cluster-4', serviceName: 'service-4'});
       service.on('updated', () => {
         expect(service.targets.length).to.equal(1);
+        service.destroy();
         done();
       });
     });
@@ -186,6 +188,7 @@ describe('Service', function() {
         const target = service.getTarget('i-1', 25002);
         expect(target.Target.Port).to.equal(25002);
 
+        service.destroy();
         done();
       });
     });
@@ -225,6 +228,7 @@ describe('Service', function() {
       const containerInstances = await service._clusterContainerInstances();
       expect(containerInstances.length).to.equal(2);
       expect(containerInstances[0].ec2InstanceId).to.equal('i-1');
+      service.destroy();
     });
   });
 
@@ -263,6 +267,7 @@ describe('Service', function() {
       const tasks = await service._tasks();
       expect(tasks.length).to.equal(2);
       expect(tasks[0].taskArn).to.equal('arn:task:1');
+      service.destroy();
     });
 
     it('should handle no tasks in a service', async function() {
@@ -289,6 +294,7 @@ describe('Service', function() {
       const service = new Service({clusterArn: 'cluster-8', serviceName: 'service-8'});
       const tasks = await service._tasks();
       expect(tasks.length).to.equal(0);
+      service.destroy();
     });
   });
 
@@ -364,6 +370,7 @@ describe('Service', function() {
       service.on('updated', function() {
         expect(service.isTaskHealthy('arn::task:1')).to.equal(false);
         expect(service.isTaskHealthy('arn::task:2')).to.equal(true);
+        service.destroy();
         done();
       });
     });
@@ -457,10 +464,15 @@ describe('Service', function() {
       AWS.mock('ECS', 'describeServices', function(params, cb) {
         cb(null, fixtures['fargateDeployment']);
       });
+      // lib/resources/tasks has an ECS/describeTasks call that needs hooking
+      // to prevent the actual SDK from trying to make a call. We don't see the
+      // results from it here so no-op is fine.
+      AWS.mock('ECS', 'describeTasks', () => {});
 
       const service = new Service({clusterArn: 'arn:aws:ecs:us-east-1:12345789012:cluster/mycluster', serviceName: 'my-test-application'});
 
       service.on('updated', function() {
+        service.destroy();
         expect(service.isTaskHealthy('arn:aws:ecs:us-east-1:12345789012:task/mycluster/abcdefgh')).to.equal(true);
         expect(service.isTaskHealthy('arn:aws:ecs:us-east-1:12345789012:task/mycluster/bcdefghi')).to.equal(false);
         expect(service.isTaskHealthy('arn:aws:ecs:us-east-1:12345789012:task/mycluster/cdefghij')).to.equal(false);
@@ -469,3 +481,4 @@ describe('Service', function() {
     });
   });
 });
+
