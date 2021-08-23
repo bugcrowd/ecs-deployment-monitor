@@ -1,6 +1,7 @@
-FROM node:10-alpine
+FROM node:16-alpine
 
 COPY . /usr/app
 WORKDIR /usr/app
-RUN npm install
+RUN npm ci 
 CMD [ "npm", "test" ]
+
