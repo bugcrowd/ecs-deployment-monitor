@@ -10,9 +10,11 @@ This monitor uses the healthy status on Target Group Targets to determine if a t
 Installation
 ------------
 
-Install package with NPM.
+Install package with NPM. **NOTE:** We have moved the package under our
+`bugcrowd` NPM organization - this will be the only package location maintained
+going forward.
 
-`npm install ecs-deployment-monitor --save`
+`npm install @bugcrowd/ecs-deployment-monitor --save`
 
 Remove `--save` and add the `-g` flag to install globally if you wish to use the CLI version.
 
