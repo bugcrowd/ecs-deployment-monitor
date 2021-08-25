@@ -53,9 +53,9 @@ describe('Service', function() {
   describe('Constructor', function() {
     it('should return call describeServices with correct params', function(done) {
       AWS.mock('ECS', 'describeServices', function(params, cb) {
+        service.destroy();
         expect(params.cluster).to.equal('cluster-0');
         expect(params.services).to.eql(['service-0']);
-        service.destroy();
         done();
       });
 
@@ -69,8 +69,8 @@ describe('Service', function() {
 
       const service = new Service({clusterArn: 'cluster-1', serviceName: 'service-1'});
       service.on('updated', () => {
-        expect(service.clusterContainerInstances).to.eql(['instance']);
         service.destroy();
+        expect(service.clusterContainerInstances).to.eql(['instance']);
         done();
       });
     });
@@ -102,8 +102,8 @@ describe('Service', function() {
       const service = new Service({clusterArn: 'cluster-3', serviceName: 'service-3'});
 
       service.on('event', (event) => {
-        expect(event.raw.id).to.equal('e1e75594-b9c9-4c32-bb90-89801bd89a62');
         service.destroy();
+        expect(event.raw.id).to.equal('e1e75594-b9c9-4c32-bb90-89801bd89a62');
         done();
       });
 
@@ -145,8 +145,8 @@ describe('Service', function() {
 
       const service = new Service({clusterArn: 'cluster-4', serviceName: 'service-4'});
       service.on('updated', () => {
-        expect(service.targets.length).to.equal(1);
         service.destroy();
+        expect(service.targets.length).to.equal(1);
         done();
       });
     });
@@ -186,9 +186,9 @@ describe('Service', function() {
         ];
 
         const target = service.getTarget('i-1', 25002);
+        service.destroy();
         expect(target.Target.Port).to.equal(25002);
 
-        service.destroy();
         done();
       });
     });
@@ -226,9 +226,9 @@ describe('Service', function() {
 
       const service = new Service({clusterArn: 'cluster-6', serviceName: 'service-6'});
       const containerInstances = await service._clusterContainerInstances();
+      service.destroy();
       expect(containerInstances.length).to.equal(2);
       expect(containerInstances[0].ec2InstanceId).to.equal('i-1');
-      service.destroy();
     });
   });
 
@@ -265,9 +265,9 @@ describe('Service', function() {
 
       const service = new Service({clusterArn: 'cluster-7', serviceName: 'service-7'});
       const tasks = await service._tasks();
+      service.destroy();
       expect(tasks.length).to.equal(2);
       expect(tasks[0].taskArn).to.equal('arn:task:1');
-      service.destroy();
     });
 
     it('should handle no tasks in a service', async function() {
@@ -293,8 +293,8 @@ describe('Service', function() {
 
       const service = new Service({clusterArn: 'cluster-8', serviceName: 'service-8'});
       const tasks = await service._tasks();
-      expect(tasks.length).to.equal(0);
       service.destroy();
+      expect(tasks.length).to.equal(0);
     });
   });
 
@@ -368,9 +368,9 @@ describe('Service', function() {
       const service = new Service({clusterArn: 'cluster-9', serviceName: 'service-9'});
 
       service.on('updated', function() {
+        service.destroy();
         expect(service.isTaskHealthy('arn::task:1')).to.equal(false);
         expect(service.isTaskHealthy('arn::task:2')).to.equal(true);
-        service.destroy();
         done();
       });
     });
