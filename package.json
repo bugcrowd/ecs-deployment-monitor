@@ -1,6 +1,6 @@
 {
   "name": "@bugcrowd/ecs-deployment-monitor",
-  "version": "0.2.5-rc1",
+  "version": "0.2.5-rc2",
   "description": "Monitor an ECS Deployment",
   "main": "index.js",
   "scripts": {
