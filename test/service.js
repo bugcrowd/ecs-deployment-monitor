@@ -381,7 +381,7 @@ describe('Service', function() {
       setServiceDependencyFixture('targets', [
         {
           Target: {
-            Ip: '192.0.2.1',
+            Id: '192.0.2.1',
             Port: 8443,
           },
           TargetHealth: {
@@ -390,7 +390,7 @@ describe('Service', function() {
         },
         {
           Target: {
-            Ip: '192.0.2.2',
+            Id: '192.0.2.2',
             Port: 8443,
           },
           TargetHealth: {
@@ -476,6 +476,92 @@ describe('Service', function() {
         expect(service.isTaskHealthy('arn:aws:ecs:us-east-1:12345789012:task/mycluster/abcdefgh')).to.equal(true);
         expect(service.isTaskHealthy('arn:aws:ecs:us-east-1:12345789012:task/mycluster/bcdefghi')).to.equal(false);
         expect(service.isTaskHealthy('arn:aws:ecs:us-east-1:12345789012:task/mycluster/cdefghij')).to.equal(false);
+        done();
+      });
+    });
+  });
+
+  describe('_getTargetsForFargateTask', () => {
+    beforeEach(() => {
+      setServiceDependencyFixture('targets', [
+        {
+          Target: {
+            Id: '192.0.2.1',
+            Port: 8443,
+          },
+          AvailabilityZone: 'us-east-1b',
+          HealthCheckPort: 8443,
+          TargetHealth: {
+            State: 'healthy',
+          },
+        },
+        {
+          Target: {
+            Id: '192.0.2.2',
+            Port: 8443,
+          },
+          AvailabilityZone: 'us-east-1c',
+          HealthCheckPort: 8443,
+          TargetHealth: {
+            State: 'healthy',
+          },
+        },
+      ]);
+
+      setServiceDependencyFixture('tasks', [
+        {
+          taskArn: 'arn:aws:ecs:us-east-1:12345789012:task/mycluster/abcdefgh',
+          containers: [
+            {
+              'name': 'app',
+            },
+          ],
+          attachments: [
+            {
+              'type': 'ElasticNetworkInterface',
+              'details': [
+                {
+                  'name': 'privateIPv4Address',
+                  'value': '192.0.2.1',
+                },
+              ],
+            },
+          ],
+        },
+        {
+          taskArn: 'arn:aws:ecs:us-east-1:12345789012:task/mycluster/bcdefghi',
+          containers: [
+            {
+              'name': 'app',
+            },
+          ],
+          attachments: [
+            {
+              'type': 'ElasticNetworkInterface',
+              'details': [
+                {
+                  'name': 'privateIPv4Address',
+                  'value': '192.0.2.100',
+                },
+              ],
+            },
+          ],
+        }
+      ]);
+    });
+
+    it('should find matching tasks by IP', (done) => {
+      AWS.mock('ECS', 'describeServices', (params, cb) => {
+        cb(null, fixtures['fargateDeployment']);
+      });
+      AWS.mock('ECS', 'describeTasks', () => {});
+
+      const service = new Service({clusterArn: 'arn:aws:ecs:us-east-1:12345789012:cluster/mycluster', serviceName: 'my-test-application'});
+
+      service.on('updated', function() {
+        service.destroy();
+        expect(service._getTargetsForFargateTask(service.tasks[0], 8443).length).to.equal(1);
+        expect(service._getTargetsForFargateTask(service.tasks[1], 8443).length).to.equal(0);
         done();
       });
     });
