@@ -20,4 +20,5 @@ var deployment = monitor({
 deployment.on('error', (err) => {
   throw err
 });
-// deployment.on('exitCode', (exitCode) => process.exit(exitCode));
+
+deployment.on('exitCode', (exitCode) => process.exit(exitCode));
