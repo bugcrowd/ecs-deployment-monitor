@@ -5,19 +5,15 @@ const async = require('async');
 const _ = require('lodash');
 const sinon = require('sinon');
 const EventEmitter = require('events');
-const { mockClient } = require('aws-sdk-client-mock');
-const { ECS } = require('@aws-sdk/client-ecs');
 
 const Deployment = require('../lib/deployment');
 const events = require('../lib/events');
 
 describe('Deployment', function () {
   let deployment = null;
-  const ecsMock = mockClient(ECS);
 
   afterEach(() => {
     if (deployment) deployment.destroy();
-    ecsMock.reset();
   });
 
   it('should emit state change and set internal state', function (done) {
