@@ -2,9 +2,7 @@
 
 const expect = require('expect.js');
 const _ = require('lodash');
-const AWS = require('aws-sdk-mock');
 const moment = require('moment');
-const sinon = require('sinon');
 const tk = require('timekeeper');
 const streamBuffers = require('stream-buffers');
 const EventEmitter = require('events');

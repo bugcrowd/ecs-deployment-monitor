@@ -5,9 +5,7 @@ const expect = require('expect.js');
 const SteadyEvent = require('../../lib/events/steady-event');
 
 describe('Events:SteadyEvent', function () {
-  afterEach(helpers.afterEach);
-
-  var rawEvent = {
+  const rawEvent = {
     message: '(service app) has reached a steady state.'
   }
 

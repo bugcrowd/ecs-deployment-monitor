@@ -51,6 +51,9 @@ describe('Service', function () {
     serviceTasks = sinon
       .stub(Service.prototype, '_tasks')
       .callsFake(() => serviceDependencyFixtures['tasks']);
+
+    ecsMock.reset();
+    elbMock.reset();
   });
 
   afterEach(() => {

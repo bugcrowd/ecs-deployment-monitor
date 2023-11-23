@@ -10,7 +10,7 @@ const NotFoundRenderState = require('../../../lib/renderer/states/not-found');
 describe('Renderer:State:NotFound', function () {
   it('should include TaskDefinitionArn in done message', function () {
     let taskDefinitionArn = 'arn:taskdefinition:1';
-    var service = new EventEmitter();
+    const service = new EventEmitter();
     let deployment = new Deployment({ service: service, taskDefinitionArn: taskDefinitionArn });
     let bufferStream = new streamBuffers.WritableStreamBuffer();
 
