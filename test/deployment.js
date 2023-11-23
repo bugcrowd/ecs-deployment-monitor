@@ -3,31 +3,27 @@
 const expect = require('expect.js');
 const async = require('async');
 const _ = require('lodash');
-const AWS = require('aws-sdk-mock');
 const sinon = require('sinon');
 const EventEmitter = require('events');
-
-const helpers = require('./helpers');
+const { mockClient } = require('aws-sdk-client-mock');
+const { ECS } = require('@aws-sdk/client-ecs');
 
 const Deployment = require('../lib/deployment');
-const Service = require('../lib/service');
 const events = require('../lib/events');
-const taskLoader = require('./resources/tasks');
-const fixtures = require('./fixtures');
 
-describe('Deployment', function() {
-  var deployment = null;
+describe('Deployment', function () {
+  let deployment = null;
+  const ecsMock = mockClient(ECS);
 
   afterEach(() => {
     if (deployment) deployment.destroy();
+    ecsMock.reset();
   });
 
-  afterEach(helpers.afterEach);
-
-  it('should emit state change and set internal state', function(done) {
-    var startTime = Date.now();
-    var service = new EventEmitter();
-    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+  it('should emit state change and set internal state', function (done) {
+    const startTime = Date.now();
+    const service = new EventEmitter();
+    deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
 
     deployment.on('state', (state) => {
       expect(state).to.equal('fake');
@@ -40,31 +36,31 @@ describe('Deployment', function() {
     deployment.setState('fake');
   });
 
-  it('should report deployment as failed when history includes failed states', function() {
-    var service = new EventEmitter();
-    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
-    deployment.history.push({state: 'Created'});
-    deployment.history.push({state: 'TasksStarted'});
+  it('should report deployment as failed when history includes failed states', function () {
+    const service = new EventEmitter();
+    deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
+    deployment.history.push({ state: 'Created' });
+    deployment.history.push({ state: 'TasksStarted' });
     expect(deployment.isFailure()).to.equal(false);
-    deployment.history.push({state: 'TasksFailed'});
+    deployment.history.push({ state: 'TasksFailed' });
     expect(deployment.isFailure()).to.equal(true);
   });
 
-  it('hasState should behave correctly', function() {
-    var service = new EventEmitter();
-    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+  it('hasState should behave correctly', function () {
+    const service = new EventEmitter();
+    deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
     expect(deployment.hasState('Created')).to.equal(false);
-    deployment.history.push({state: 'Created'});
+    deployment.history.push({ state: 'Created' });
     expect(deployment.hasState('Created')).to.equal(true);
   });
 
-  it('should set raw deployment after service update', function(done) {
-    var service = new EventEmitter();
+  it('should set raw deployment after service update', function (done) {
+    const service = new EventEmitter();
     service.raw = {
-      deployments: [{taskDefinition: 'bla'}]
+      deployments: [{ taskDefinition: 'bla' }]
     };
 
-    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
     deployment.stoppedTasks = () => true;
     deployment._serviceUpdated();
 
@@ -74,13 +70,13 @@ describe('Deployment', function() {
     done();
   });
 
-  it('should not trigger NotFound state if it doesnt find the deployment on first attempt', function(done) {
-    var service = new EventEmitter();
+  it('should not trigger NotFound state if it doesnt find the deployment on first attempt', function (done) {
+    const service = new EventEmitter();
     service.raw = {
-      deployments: [{taskDefinition: 'yo'}]
+      deployments: [{ taskDefinition: 'yo' }]
     };
 
-    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
     deployment.stoppedTasks = () => true;
     deployment._serviceUpdated();
 
@@ -89,13 +85,13 @@ describe('Deployment', function() {
     done();
   });
 
-  it('should set state as NotFound if deployment wasnt found after 3 attempts', function(done) {
-    var service = new EventEmitter();
+  it('should set state as NotFound if deployment wasnt found after 3 attempts', function (done) {
+    const service = new EventEmitter();
     service.raw = {
-      deployments: [{taskDefinition: 'yo'}]
+      deployments: [{ taskDefinition: 'yo' }]
     };
 
-    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
     deployment.stoppedTasks = () => true;
     deployment._serviceUpdated();
     deployment._serviceUpdated();
@@ -109,13 +105,13 @@ describe('Deployment', function() {
     done();
   });
 
-  it('should store failed tasks and emit updated on service update', function() {
-    var service = new EventEmitter();
+  it('should store failed tasks and emit updated on service update', function () {
+    const service = new EventEmitter();
     service.raw = {
-      deployments: [{taskDefinition: 'bla'}]
+      deployments: [{ taskDefinition: 'bla' }]
     };
 
-    deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
     deployment.evaluate = () => true;
     deployment.stoppedTasks = (cb) => cb(null, [{ taskArn: 'arn::1' }, { taskArn: 'arn::2' }]);
     deployment.on('updated', () => {
@@ -125,9 +121,9 @@ describe('Deployment', function() {
     deployment._serviceUpdated();
   });
 
-  describe('Constructor', function() {
-    var serviceEventListenerStub = null;
-    var serviceUpdatedStub = null;
+  describe('Constructor', function () {
+    let serviceEventListenerStub = null;
+    let serviceUpdatedStub = null;
 
     beforeEach(() => {
       serviceEventListenerStub = sinon.stub(Deployment.prototype, "_serviceEventListener");
@@ -139,9 +135,9 @@ describe('Deployment', function() {
       serviceUpdatedStub.restore()
     });
 
-    it('should listen for events on a service object ', function(done) {
-      var service = new EventEmitter();
-      deployment = new Deployment({service: service});
+    it('should listen for events on a service object ', function (done) {
+      const service = new EventEmitter();
+      deployment = new Deployment({ service: service });
 
       service.emit('event', 'test');
       service.emit('updated');
@@ -154,17 +150,17 @@ describe('Deployment', function() {
     });
   });
 
-  describe('Evaluator', function() {
-    var evaluatorSpyFactory = (name, result) => {
+  describe('Evaluator', function () {
+    const evaluatorSpyFactory = (name, result) => {
       return sinon.spy((d, cb) => {
         cb(null, result);
       });
     }
 
-    it('should call evaluators', function(done) {
-      var service = new EventEmitter();
+    it('should call evaluators', function (done) {
+      const service = new EventEmitter();
       service.initiated = true;
-      deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+      deployment = new Deployment({ service: service, taskDefinitionArn: 'arn' });
 
       var evaluatorStubs = {
         'Usurped': evaluatorSpyFactory('Usurped', false),
@@ -180,18 +176,18 @@ describe('Deployment', function() {
       });
     });
 
-    it('should call setState when evaluator returns true', function(done) {
-      var setStateStub = sinon.stub(Deployment.prototype, "setState").callsFake(function(state) {
+    it('should call setState when evaluator returns true', function (done) {
+      const setStateStub = sinon.stub(Deployment.prototype, "setState").callsFake(function (state) {
         expect(state).to.equal('Usurped');
         setStateStub.restore();
         done();
       });
 
-      var service = new EventEmitter();
+      const service = new EventEmitter();
       service.initiated = true;
-      deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+      deployment = new Deployment({ service: service, taskDefinitionArn: 'arn' });
 
-      var evaluatorStubs = {
+      const evaluatorStubs = {
         'Usurped': evaluatorSpyFactory('Usurped', true),
         'TasksStarted': evaluatorSpyFactory('TasksStarted', false)
       };
@@ -199,12 +195,12 @@ describe('Deployment', function() {
       deployment.evaluate(evaluatorStubs, _.noop);
     });
 
-    it('should call evaluators only one if evaluator previouly returned true', function(done) {
-      var service = new EventEmitter();
+    it('should call evaluators only one if evaluator previouly returned true', function (done) {
+      const service = new EventEmitter();
       service.initiated = true;
-      deployment = new Deployment({service: service, taskDefinitionArn: 'arn'});
+      deployment = new Deployment({ service: service, taskDefinitionArn: 'arn' });
 
-      var evaluatorStubs = {
+      const evaluatorStubs = {
         'TasksStarted': evaluatorSpyFactory('TasksStarted', true)
       };
 
@@ -217,16 +213,16 @@ describe('Deployment', function() {
     });
   });
 
-  describe('Service Event Listener', function() {
-    it('should process a TasksStartedEvent and retain tasks', function(done) {
-      var taskArn = 'arn:task';
-      var service = new EventEmitter();
-      deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
+  describe('Service Event Listener', function () {
+    it('should process a TasksStartedEvent and retain tasks', function (done) {
+      const taskArn = 'arn:task';
+      const service = new EventEmitter();
+      deployment = new Deployment({ service: service, taskDefinitionArn: taskArn });
       deployment.raw = {
         createdAt: Date.now() - 5
       }
 
-      var event = new events.TasksStartedEvent(service, { message: 'msg' });
+      const event = new events.TasksStartedEvent(service, { message: 'msg' });
       event.tasks = [
         { taskArn: 1, taskDefinitionArn: taskArn, createdAt: Date.now() },
         { taskArn: 2, taskDefinitionArn: taskArn, createdAt: Date.now() }
@@ -234,16 +230,16 @@ describe('Deployment', function() {
 
       deployment._serviceEventListener(event);
 
-      expect(deployment.tasksStarted).to.eql([1,2]);
+      expect(deployment.tasksStarted).to.eql([1, 2]);
       done();
     });
 
-    it('should process a SteadyEvent and mark deployment as steady', function(done) {
-      var taskArn = 'arn:task';
-      var service = new EventEmitter();
-      deployment = new Deployment({service: service, taskDefinitionArn: taskArn});
+    it('should process a SteadyEvent and mark deployment as steady', function (done) {
+      const taskArn = 'arn:task';
+      const service = new EventEmitter();
+      deployment = new Deployment({ service: service, taskDefinitionArn: taskArn });
 
-      var event = new events.SteadyEvent(service, { message: 'msg' });
+      const event = new events.SteadyEvent(service, { message: 'msg' });
       deployment._serviceEventListener(event);
 
       expect(deployment.steady).to.eql(true);

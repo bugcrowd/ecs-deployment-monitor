@@ -4,12 +4,12 @@
 
 const monitor = require('../');
 
-var argv = require('yargs')
+const argv = require('yargs')
   .demand(['cluster', 'service-name', 'task-definition'])
   .default('failure-threshold', '.25')
   .argv;
 
-var deployment = monitor({
+const deployment = monitor({
   serviceName: argv.serviceName,
   clusterArn: argv.cluster,
   taskDefinitionArn: argv.taskDefinition,

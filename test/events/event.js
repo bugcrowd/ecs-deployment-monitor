@@ -2,12 +2,10 @@
 
 const expect = require('expect.js');
 
-const helpers = require('../helpers');
-
 const Event = require('../../lib/events/event');
 const resources = require('../../lib/resources');
 
-describe('Events', function() {
+describe('Events', function () {
   afterEach(helpers.afterEach);
 
   var rawEvent = {
@@ -20,7 +18,7 @@ describe('Events', function() {
     }
   }
 
-  it('should extract banana resource identifiers', function() {
+  it('should extract banana resource identifiers', function () {
     var event = new BananaEvent(null, rawEvent);
     expect(event.resources['bananas']).to.eql([
       '8ddca76b-3ca5-4166-9cbb-aebdb8631861',
@@ -30,10 +28,10 @@ describe('Events', function() {
     ]);
   });
 
-  it('should load banana resources', function(done) {
+  it('should load banana resources', function (done) {
     var event = new BananaEvent('service', rawEvent);
 
-    resources['bananas'] = function(service, ids, cb) {
+    resources['bananas'] = function (service, ids, cb) {
       expect(service).to.equal('service');
       expect(ids).to.eql([
         '8ddca76b-3ca5-4166-9cbb-aebdb8631861',
@@ -42,11 +40,11 @@ describe('Events', function() {
         'f61d518f-ef95-40a8-9ce9-afd6e1ada4a7'
       ]);
 
-      cb(null, [ 1, 2 ]);
+      cb(null, [1, 2]);
     };
 
     event.loadResources((err) => {
-      expect(event.bananas).to.eql([ 1, 2 ]);
+      expect(event.bananas).to.eql([1, 2]);
       delete resources['bananas'];
       done();
     });
