@@ -188,7 +188,7 @@ describe('Deployment', function () {
         'TasksStarted': evaluatorSpyFactory('TasksStarted', false)
       };
 
-      deployment.evaluate(evaluatorStubs, _.noop);
+      deployment.evaluate(evaluatorStubs, () => { });
     });
 
     it('should call evaluators only one if evaluator previouly returned true', function (done) {

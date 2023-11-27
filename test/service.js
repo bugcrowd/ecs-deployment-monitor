@@ -29,7 +29,7 @@ describe('Service', function () {
   const ecsMock = mockClient(ECS);
   const elbMock = mockClient(ELBv2);
 
-  const originalServiceDependencyFixtures = _.cloneDeep(serviceDependencyFixtures);
+  const originalServiceDependencyFixtures = structuredClone(serviceDependencyFixtures);
 
   let targetHealthStub = null;
   let containerInstanceStub = null;
@@ -57,7 +57,7 @@ describe('Service', function () {
   });
 
   afterEach(() => {
-    serviceDependencyFixtures = _.cloneDeep(originalServiceDependencyFixtures);
+    serviceDependencyFixtures = structuredClone(originalServiceDependencyFixtures);
     targetHealthStub.restore();
     containerInstanceStub.restore();
     serviceTasks.restore();
