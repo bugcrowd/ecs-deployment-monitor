@@ -1,11 +1,11 @@
 {
   "name": "@bugcrowd/ecs-deployment-monitor",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "Monitor an ECS Deployment",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/mocha --recursive",
-    "cover": "npx nyc npm t"
+    "test": "mocha --recursive",
+    "cover": "nyc npm t"
   },
   "bin": {
     "ecs-deployment-monitor": "./bin/ecs-deployment-monitor"
@@ -13,18 +13,20 @@
   "author": "Coen Hyde",
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk-mock": "^4.5.0",
+    "aws-sdk-client-mock": "^3.0.0",
     "eslint": "^7.32.0",
     "eslint-config-google": "^0.14.0",
     "expect.js": "^0.3.1",
     "mocha": "^10.2.0",
+    "nyc": "^15.1.0",
     "sinon": "^6.3.5",
     "stream-buffers": "^3.0.2",
     "timekeeper": "^2.2.0"
   },
   "dependencies": {
+    "@aws-sdk/client-ecs": "^3.454.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.454.0",
     "async": "^3.1.0",
-    "aws-sdk": "^2.587.0",
     "colors": "^1.4.0",
     "indent": "0.0.2",
     "inflection": "^1.12.0",

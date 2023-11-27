@@ -2,26 +2,23 @@
 
 const expect = require('expect.js');
 const _ = require('lodash');
-const AWS = require('aws-sdk-mock');
 const moment = require('moment');
-const sinon = require('sinon');
 const tk = require('timekeeper');
 const streamBuffers = require('stream-buffers');
 const EventEmitter = require('events');
 
-const helpers = require('../helpers');
 const Renderer = require('../../lib/renderer');
 const Deployment = require('../../lib/deployment');
 const states = require('../../lib/renderer/states');
 
-describe('Renderer', function() {
-  it('should watch deployment for state changes', function(done) {
+describe('Renderer', function () {
+  it('should watch deployment for state changes', function (done) {
     let service = new EventEmitter();
     let bufferStream = new streamBuffers.WritableStreamBuffer();
-    let deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    let deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
 
     let _stateChangeOld = Renderer._stateChange;
-    Renderer._stateChange = function(deployment2, output, state) {
+    Renderer._stateChange = function (deployment2, output, state) {
       expect(deployment2).to.equal(deployment);
       expect(output).to.equal(bufferStream);
       expect(state).to.equal('newstate');
@@ -33,7 +30,7 @@ describe('Renderer', function() {
     deployment.emit('state', 'newstate');
   });
 
-  it('should render duration text', function() {
+  it('should render duration text', function () {
     let fakeDate = Date.now();
     tk.freeze(fakeDate);
 
@@ -42,10 +39,10 @@ describe('Renderer', function() {
     tk.reset();
   });
 
-  it('should process a state change', function(done) {
+  it('should process a state change', function (done) {
     let service = new EventEmitter();
     let bufferStream = new streamBuffers.WritableStreamBuffer();
-    let deployment = new Deployment({service: service, taskDefinitionArn: 'bla'});
+    let deployment = new Deployment({ service: service, taskDefinitionArn: 'bla' });
 
     let taskFailedFixture = {
       'done': `15 Tasks have failed`,

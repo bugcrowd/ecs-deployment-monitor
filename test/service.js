@@ -2,20 +2,32 @@
 
 const expect = require('expect.js');
 const _ = require('lodash');
-const AWS = require('aws-sdk-mock');
 const sinon = require('sinon');
-
-const helpers = require('./helpers');
+const { mockClient } = require('aws-sdk-client-mock');
+const {
+  ECS,
+  DescribeServicesCommand,
+  DescribeTasksCommand,
+  ListContainerInstancesCommand,
+  DescribeContainerInstancesCommand,
+  ListTasksCommand
+} = require('@aws-sdk/client-ecs');
+const {
+  ElasticLoadBalancingV2: ELBv2,
+  DescribeTargetHealthCommand
+} = require('@aws-sdk/client-elastic-load-balancing-v2');
 
 const Service = require('../lib/service');
 const fixtures = require('./fixtures');
 
-describe('Service', function() {
+describe('Service', function () {
   let serviceDependencyFixtures = {
     targets: ['target'],
     containerInstances: ['instance'],
     tasks: ['task'],
   };
+  const ecsMock = mockClient(ECS);
+  const elbMock = mockClient(ELBv2);
 
   const originalServiceDependencyFixtures = _.cloneDeep(serviceDependencyFixtures);
 
@@ -29,16 +41,19 @@ describe('Service', function() {
 
   beforeEach(() => {
     targetHealthStub = sinon
-        .stub(Service.prototype, '_targets')
-        .callsFake(() => serviceDependencyFixtures['targets']);
+      .stub(Service.prototype, '_targets')
+      .callsFake(() => serviceDependencyFixtures['targets']);
 
     containerInstanceStub = sinon
-        .stub(Service.prototype, '_clusterContainerInstances')
-        .callsFake(() => serviceDependencyFixtures['containerInstances']);
+      .stub(Service.prototype, '_clusterContainerInstances')
+      .callsFake(() => serviceDependencyFixtures['containerInstances']);
 
     serviceTasks = sinon
-        .stub(Service.prototype, '_tasks')
-        .callsFake(() => serviceDependencyFixtures['tasks']);
+      .stub(Service.prototype, '_tasks')
+      .callsFake(() => serviceDependencyFixtures['tasks']);
+
+    ecsMock.reset();
+    elbMock.reset();
   });
 
   afterEach(() => {
@@ -46,28 +61,34 @@ describe('Service', function() {
     targetHealthStub.restore();
     containerInstanceStub.restore();
     serviceTasks.restore();
+    ecsMock.reset();
+    elbMock.reset();
   });
 
-  afterEach(helpers.afterEach);
+  describe('Constructor', function () {
+    it('should return call describeServices with correct params', function (done) {
+      const fakeServiceResponse = {
+        services: [{
+          serviceArn: 'arn:0',
+          deployments: []
+        }]
+      };
 
-  describe('Constructor', function() {
-    it('should return call describeServices with correct params', function(done) {
-      AWS.mock('ECS', 'describeServices', function(params, cb) {
+      ecsMock.on(DescribeServicesCommand).callsFake((params) => {
         service.destroy();
         expect(params.cluster).to.equal('cluster-0');
         expect(params.services).to.eql(['service-0']);
         done();
+        return Promise.resolve(fakeServiceResponse);
       });
 
-      const service = new Service({clusterArn: 'cluster-0', serviceName: 'service-0'});
+      const service = new Service({ clusterArn: 'cluster-0', serviceName: 'service-0' });
     });
 
-    it('should return call _clusterContainerInstances', function(done) {
-      AWS.mock('ECS', 'describeServices', function(params, cb) {
-        cb(null, fixtures['newDeployment']);
-      });
+    it('should return call _clusterContainerInstances', function (done) {
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['newDeployment']);
 
-      const service = new Service({clusterArn: 'cluster-1', serviceName: 'service-1'});
+      const service = new Service({ clusterArn: 'cluster-1', serviceName: 'service-1' });
       service.on('updated', () => {
         service.destroy();
         expect(service.clusterContainerInstances).to.eql(['instance']);
@@ -76,13 +97,11 @@ describe('Service', function() {
     });
   });
 
-  describe('Cluster Events', function() {
-    it('should pluck events since timestamp', function(done) {
-      AWS.mock('ECS', 'describeServices', function(params, cb) {
-        cb(null, fixtures['newDeployment']);
-      });
+  describe('Cluster Events', function () {
+    it('should pluck events since timestamp', function (done) {
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['newDeployment']);
 
-      const service = new Service({clusterArn: 'cluster-2', serviceName: 'service-2'});
+      const service = new Service({ clusterArn: 'cluster-2', serviceName: 'service-2' });
       const events = service._pluckEventsSince(fixtures['newDeployment']['services'][0]['events'], 1494960755);
       service.destroy();
 
@@ -90,16 +109,11 @@ describe('Service', function() {
       done();
     });
 
-    it('should emit new event', function(done) {
-      AWS.mock('ECS', 'describeServices', function(params, cb) {
-        cb(null, fixtures['tasksStartedDeployment']);
-      });
+    it('should emit new event', function (done) {
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['tasksStartedDeployment']);
+      ecsMock.on(DescribeTasksCommand).resolves({ tasks: [1, 2, 3, 4] });
 
-      AWS.mock('ECS', 'describeTasks', function(params, cb) {
-        cb(null, {tasks: [1, 2, 3, 4]});
-      });
-
-      const service = new Service({clusterArn: 'cluster-3', serviceName: 'service-3'});
+      const service = new Service({ clusterArn: 'cluster-3', serviceName: 'service-3' });
 
       service.on('event', (event) => {
         service.destroy();
@@ -113,18 +127,15 @@ describe('Service', function() {
     });
   });
 
-  describe('Targets', function() {
-    it('should return targets', function(done) {
+  describe('Targets', function () {
+    it('should return targets', function (done) {
       targetHealthStub.restore();
 
-      AWS.mock('ECS', 'describeServices', function(params, cb) {
-        cb(null, fixtures['newDeployment']);
-      });
-
-      AWS.mock('ELBv2', 'describeTargetHealth', function(params, cb) {
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['newDeployment']);
+      elbMock.on(DescribeTargetHealthCommand).callsFake((params) => {
         expect(params.TargetGroupArn).to.equal('arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/group/abcdef');
 
-        cb(null, {
+        return Promise.resolve({
           TargetHealthDescriptions: [
             {
               Target: {
@@ -139,11 +150,7 @@ describe('Service', function() {
         });
       });
 
-      AWS.mock('ECS', 'describeServices', (params, cb) => {
-        cb(null, fixtures['newDeployment']);
-      });
-
-      const service = new Service({clusterArn: 'cluster-4', serviceName: 'service-4'});
+      const service = new Service({ clusterArn: 'cluster-4', serviceName: 'service-4' });
       service.on('updated', () => {
         service.destroy();
         expect(service.targets.length).to.equal(1);
@@ -151,16 +158,10 @@ describe('Service', function() {
       });
     });
 
-    it('should return a target via getTarget', function(done) {
-      AWS.mock('ECS', 'describeServices', function(params, cb) {
-        cb(null, fixtures['newDeployment']);
-      });
+    it('should return a target via getTarget', function (done) {
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['newDeployment']);
 
-      AWS.mock('ECS', 'describeServices', (params, cb) => {
-        cb(null, fixtures['newDeployment']);
-      });
-
-      const service = new Service({clusterArn: 'cluster-yo5', serviceName: 'service-yo5'});
+      const service = new Service({ clusterArn: 'cluster-yo5', serviceName: 'service-yo5' });
       service.on('updated', () => {
         service.targets = [
           {
@@ -194,14 +195,14 @@ describe('Service', function() {
     });
   });
 
-  describe('ClusterContainerInstances', function() {
-    it('should return container instances', async function() {
+  describe('ClusterContainerInstances', function () {
+    it('should return container instances', async function () {
       containerInstanceStub.restore();
 
-      AWS.mock('ECS', 'listContainerInstances', function(params, cb) {
+      ecsMock.on(ListContainerInstancesCommand).callsFake((params) => {
         expect(params.cluster).to.equal('cluster-6');
 
-        cb(null, {
+        return Promise.resolve({
           containerInstanceArns: [
             'arn::1',
             'arn::2',
@@ -209,22 +210,20 @@ describe('Service', function() {
         });
       });
 
-      AWS.mock('ECS', 'describeContainerInstances', function(params, cb) {
+      ecsMock.on(DescribeContainerInstancesCommand).callsFake((params) => {
         expect(params.cluster).to.equal('cluster-6');
 
-        cb(null, {
+        return Promise.resolve({
           containerInstances: [
-            {containerInstanceArn: 'arn::1', ec2InstanceId: 'i-1'},
-            {containerInstanceArn: 'arn::2', ec2InstanceId: 'i-2'},
+            { containerInstanceArn: 'arn::1', ec2InstanceId: 'i-1' },
+            { containerInstanceArn: 'arn::2', ec2InstanceId: 'i-2' },
           ],
         });
       });
 
-      AWS.mock('ECS', 'describeServices', (params, cb) => {
-        cb(null, fixtures['newDeployment']);
-      });
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['newDeployment']);
 
-      const service = new Service({clusterArn: 'cluster-6', serviceName: 'service-6'});
+      const service = new Service({ clusterArn: 'cluster-6', serviceName: 'service-6' });
       const containerInstances = await service._clusterContainerInstances();
       service.destroy();
       expect(containerInstances.length).to.equal(2);
@@ -232,15 +231,15 @@ describe('Service', function() {
     });
   });
 
-  describe('ServiceTasks', function() {
-    it('should return tasks in a service', async function() {
+  describe('ServiceTasks', function () {
+    it('should return tasks in a service', async function () {
       serviceTasks.restore();
 
-      AWS.mock('ECS', 'listTasks', function(params, cb) {
+      ecsMock.on(ListTasksCommand).callsFake((params) => {
         expect(params.cluster).to.equal('cluster-7');
         expect(params.serviceName).to.equal('service-7');
 
-        cb(null, {
+        return Promise.resolve({
           taskArns: [
             'arn::1',
             'arn::2',
@@ -248,57 +247,52 @@ describe('Service', function() {
         });
       });
 
-      AWS.mock('ECS', 'describeServices', (params, cb) => {
-        cb(null, fixtures['newDeployment']);
-      });
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['newDeployment']);
 
-      AWS.mock('ECS', 'describeTasks', function(params, cb) {
+      ecsMock.on(DescribeTasksCommand).callsFake((params) => {
         expect(params.cluster).to.equal('cluster-7');
 
-        cb(null, {
+        return Promise.resolve({
           tasks: [
-            {taskArn: 'arn:task:1'},
-            {taskArn: 'arn:task:2'},
+            { taskArn: 'arn:task:1' },
+            { taskArn: 'arn:task:2' },
           ],
         });
       });
 
-      const service = new Service({clusterArn: 'cluster-7', serviceName: 'service-7'});
+      const service = new Service({ clusterArn: 'cluster-7', serviceName: 'service-7' });
       const tasks = await service._tasks();
       service.destroy();
       expect(tasks.length).to.equal(2);
       expect(tasks[0].taskArn).to.equal('arn:task:1');
     });
 
-    it('should handle no tasks in a service', async function() {
+    it('should handle no tasks in a service', async function () {
       serviceTasks.restore();
 
-      AWS.mock('ECS', 'describeServices', (params, cb) => {
-        cb(null, fixtures['newDeployment']);
-      });
-
-      AWS.mock('ECS', 'listTasks', function(params, cb) {
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['newDeployment']);
+      ecsMock.on(ListTasksCommand).callsFake((params) => {
         expect(params.cluster).to.equal('cluster-8');
         expect(params.serviceName).to.equal('service-8');
 
-        cb(null, {
+        return Promise.resolve({
           taskArns: [],
         });
       });
 
-      AWS.mock('ECS', 'describeTasks', function(params, cb) {
+      ecsMock.on(DescribeTasksCommand).callsFake((params) => {
         // We should not be calling describe tasks when no tasks are in the service
         expect(true).to.equal(false);
       });
 
-      const service = new Service({clusterArn: 'cluster-8', serviceName: 'service-8'});
+      const service = new Service({ clusterArn: 'cluster-8', serviceName: 'service-8' });
       const tasks = await service._tasks();
       service.destroy();
       expect(tasks.length).to.equal(0);
     });
   });
 
-  describe('Target Health EC2', function() {
+  describe('Target Health EC2', function () {
     beforeEach(() => {
       setServiceDependencyFixture('targets', [
         {
@@ -360,14 +354,12 @@ describe('Service', function() {
       ]);
     });
 
-    it('should report task health', function(done) {
-      AWS.mock('ECS', 'describeServices', function(params, cb) {
-        cb(null, fixtures['newDeployment']);
-      });
+    it('should report task health', function (done) {
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['newDeployment']);
 
-      const service = new Service({clusterArn: 'cluster-9', serviceName: 'service-9'});
+      const service = new Service({ clusterArn: 'cluster-9', serviceName: 'service-9' });
 
-      service.on('updated', function() {
+      service.on('updated', function () {
         service.destroy();
         expect(service.isTaskHealthy('arn::task:1')).to.equal(false);
         expect(service.isTaskHealthy('arn::task:2')).to.equal(true);
@@ -376,7 +368,7 @@ describe('Service', function() {
     });
   });
 
-  describe('Target Health Fargate', function() {
+  describe('Target Health Fargate', function () {
     beforeEach(() => {
       setServiceDependencyFixture('targets', [
         {
@@ -460,18 +452,17 @@ describe('Service', function() {
       ]);
     });
 
-    it('should report task health', function(done) {
-      AWS.mock('ECS', 'describeServices', function(params, cb) {
-        cb(null, fixtures['fargateDeployment']);
-      });
+    it('should report task health', function (done) {
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['fargateDeployment']);
+
       // lib/resources/tasks has an ECS/describeTasks call that needs hooking
       // to prevent the actual SDK from trying to make a call. We don't see the
       // results from it here so no-op is fine.
-      AWS.mock('ECS', 'describeTasks', () => {});
+      ecsMock.on(DescribeTasksCommand).resolves({});
 
-      const service = new Service({clusterArn: 'arn:aws:ecs:us-east-1:12345789012:cluster/mycluster', serviceName: 'my-test-application'});
+      const service = new Service({ clusterArn: 'arn:aws:ecs:us-east-1:12345789012:cluster/mycluster', serviceName: 'my-test-application' });
 
-      service.on('updated', function() {
+      service.on('updated', function () {
         service.destroy();
         expect(service.isTaskHealthy('arn:aws:ecs:us-east-1:12345789012:task/mycluster/abcdefgh')).to.equal(true);
         expect(service.isTaskHealthy('arn:aws:ecs:us-east-1:12345789012:task/mycluster/bcdefghi')).to.equal(false);
@@ -551,14 +542,12 @@ describe('Service', function() {
     });
 
     it('should find matching tasks by IP', (done) => {
-      AWS.mock('ECS', 'describeServices', (params, cb) => {
-        cb(null, fixtures['fargateDeployment']);
-      });
-      AWS.mock('ECS', 'describeTasks', () => {});
+      ecsMock.on(DescribeServicesCommand).resolves(fixtures['fargateDeployment']);
+      ecsMock.on(DescribeTasksCommand).resolves({});
 
-      const service = new Service({clusterArn: 'arn:aws:ecs:us-east-1:12345789012:cluster/mycluster', serviceName: 'my-test-application'});
+      const service = new Service({ clusterArn: 'arn:aws:ecs:us-east-1:12345789012:cluster/mycluster', serviceName: 'my-test-application' });
 
-      service.on('updated', function() {
+      service.on('updated', function () {
         service.destroy();
         expect(service._getTargetsForFargateTask(service.tasks[0], 8443).length).to.equal(1);
         expect(service._getTargetsForFargateTask(service.tasks[1], 8443).length).to.equal(0);
