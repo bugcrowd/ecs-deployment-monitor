@@ -2,7 +2,6 @@
 
 const expect = require('expect.js');
 const async = require('async');
-const _ = require('lodash');
 const sinon = require('sinon');
 const EventEmitter = require('events');
 

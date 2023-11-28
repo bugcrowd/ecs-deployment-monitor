@@ -1,7 +1,6 @@
 'use strict';
 
 const expect = require('expect.js');
-const _ = require('lodash');
 const sinon = require('sinon');
 const { mockClient } = require('aws-sdk-client-mock');
 const {
