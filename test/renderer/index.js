@@ -1,7 +1,6 @@
 'use strict'
 
 const expect = require('expect.js');
-const _ = require('lodash');
 const moment = require('moment');
 const tk = require('timekeeper');
 const streamBuffers = require('stream-buffers');

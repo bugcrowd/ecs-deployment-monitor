@@ -1,15 +1,11 @@
 'use strict'
 
-const _ = require('lodash');
-
 const Service = require('./lib/service');
 const Deployment = require('./lib/deployment');
 const Renderer = require('./lib/renderer');
 
 module.exports = function (options) {
-  _.defaults(options, {
-    continueService: false
-  });
+  options.continueService = options.continueService || false;
 
   let service = new Service({
     serviceName: options.serviceName,
