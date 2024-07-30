@@ -13,7 +13,7 @@
   "author": "Coen Hyde",
   "license": "MIT",
   "devDependencies": {
-    "aws-sdk-client-mock": "^3.0.0",
+    "aws-sdk-client-mock": "^4.0.1",
     "eslint": "^7.32.0",
     "eslint-config-google": "^0.14.0",
     "expect.js": "^0.3.1",
