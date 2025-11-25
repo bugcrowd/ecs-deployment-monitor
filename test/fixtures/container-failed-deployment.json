@@ -1,0 +1,100 @@
+{
+    "tasks": [
+        {
+            "attachments": [],
+            "attributes": [
+                {
+                    "name": "ecs.cpu-architecture",
+                    "value": "x86_64"
+                }
+            ],
+            "availabilityZone": "us-east-1f",
+            "clusterArn": "arn:aws:ecs:us-east-1:123456789012:cluster/test-cluster",
+            "connectivity": "CONNECTED",
+            "connectivityAt": "2025-11-25T13:41:24.739000+11:00",
+            "containerInstanceArn": "arn:aws:ecs:us-east-1:123456789012:container-instance/test-cluster/07b64a68b8744baca8162efc012c59e6",
+            "containers": [
+                {
+                    "containerArn": "arn:aws:ecs:us-east-1:123456789012:container/test-cluster/6dc5a8ce009c4521bf210cdb350f49b1/b8e6303b-6c49-4a20-852e-aed35d92f925",
+                    "taskArn": "arn:aws:ecs:us-east-1:123456789012:task/test-cluster/6dc5a8ce009c4521bf210cdb350f49b1",
+                    "name": "pause",
+                    "image": "public.ecr.aws/eks-distro/kubernetes/pause:v1.34.1-eks-1-34-10",
+                    "imageDigest": "sha256:6bbea9dfb3660ecef21013757406d54c0b2daa5287d39eb85068cf4ab312584a",
+                    "runtimeId": "54794508ae8a4bbd68927982ef52fbc3d3963e45934e1537642a28fa0ee53edd",
+                    "lastStatus": "STOPPED",
+                    "exitCode": 0,
+                    "networkBindings": [
+                        {
+                            "bindIP": "0.0.0.0",
+                            "containerPort": 81,
+                            "hostPort": 33151,
+                            "protocol": "tcp"
+                        }
+                    ],
+                    "networkInterfaces": [],
+                    "healthStatus": "UNKNOWN",
+                    "cpu": "128",
+                    "memory": "128"
+                },
+                {
+                    "containerArn": "arn:aws:ecs:us-east-1:123456789012:container/test-cluster/6dc5a8ce009c4521bf210cdb350f49b1/f1762959-4457-4683-989a-66ba59cbc7d5",
+                    "taskArn": "arn:aws:ecs:us-east-1:123456789012:task/test-cluster/6dc5a8ce009c4521bf210cdb350f49b1",
+                    "name": "app",
+                    "image": "test-account/test-image:latest",
+                    "imageDigest": "sha256:a5ffe28da196f01d2798c450204877b1c99f85d806e6eb43ecd83838dd174421",
+                    "runtimeId": "2f25baf30e622f3c64bf42fb9b92de19c1ed26e2dce68b1adb2d78dc68bd64e4",
+                    "lastStatus": "STOPPED",
+                    "exitCode": 137,
+                    "reason": "OutOfMemoryError: Container killed due to memory usage",
+                    "networkBindings": [
+                        {
+                            "bindIP": "0.0.0.0",
+                            "containerPort": 80,
+                            "hostPort": 33150,
+                            "protocol": "tcp"
+                        }
+                    ],
+                    "networkInterfaces": [],
+                    "healthStatus": "UNKNOWN",
+                    "cpu": "1024",
+                    "memory": "1024",
+                    "memoryReservation": "1024"
+                }
+            ],
+            "cpu": "1152",
+            "createdAt": "2025-11-25T13:41:24.739000+11:00",
+            "desiredStatus": "STOPPED",
+            "enableExecuteCommand": false,
+            "executionStoppedAt": "2025-11-25T13:41:41.278000+11:00",
+            "group": "service:test-service",
+            "healthStatus": "UNKNOWN",
+            "lastStatus": "STOPPED",
+            "launchType": "EC2",
+            "memory": "1152",
+            "overrides": {
+                "containerOverrides": [
+                    {
+                        "name": "app"
+                    },
+                    {
+                        "name": "pause"
+                    }
+                ],
+                "inferenceAcceleratorOverrides": []
+            },
+            "pullStartedAt": "2025-11-25T13:41:26.908000+11:00",
+            "pullStoppedAt": "2025-11-25T13:41:27.432000+11:00",
+            "startedAt": "2025-11-25T13:41:26.952000+11:00",
+            "startedBy": "ecs-svc/6026894300699578750",
+            "stopCode": "EssentialContainerExited",
+            "stoppedAt": "2025-11-25T13:41:41.530000+11:00",
+            "stoppedReason": "Essential container in task exited",
+            "stoppingAt": "2025-11-25T13:41:41.530000+11:00",
+            "tags": [],
+            "taskArn": "arn:aws:ecs:us-east-1:123456789012:task/test-cluster/6dc5a8ce009c4521bf210cdb350f49b1",
+            "taskDefinitionArn": "arn:aws:ecs:us-east-1:123456789012:task-definition/test-service:6",
+            "version": 4
+        }
+    ],
+    "failures": []
+}
