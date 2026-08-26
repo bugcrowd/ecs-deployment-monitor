@@ -1,3 +1,11 @@
+## ⚠️ Deprecated
+
+This tool is no longer used internally at Bugcrowd and will no longer be maintained. This repository will be archived.
+
+Thank you to everyone who has contributed code to this project over the years — your efforts are appreciated!
+
+---
+
 ECS Deployment Monitor
 ==============================
 
